@@ -1,6 +1,6 @@
 const URL_PATTERN = /https:\/\/www\.takealot\.com\/all\?/
 const TITLE_XPATH =
-  "//div[@class = 'search-count  search-count-module_search-count_1oyVQ']"
+  "//div[@class = 'search-count toolbar-module_search-count_P0ViI search-count-module_search-count_1oyVQ']"
 
 //"//span[@class = 'x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x14z4hjw x3x7a5m xngnso2 x1qb5hxa x1xlr1w8 xzsf02u']"
 
@@ -9,12 +9,13 @@ const LOCATION_XPATH = null
 
 function createOverlay() {
   const overlay = document.createElement("div")
+  overlay.id = "zifty-overlay"
   overlay.style.position = "fixed"
   overlay.style.bottom = "1%"
   overlay.style.left = "0"
   overlay.style.right = "0"
-  overlay.style.width = "60%"
-  overlay.style.height = "15%"
+  overlay.style.width = "75%"
+  overlay.style.height = "20%"
   overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)"
   overlay.style.borderColor = "black"
   overlay.style.zIndex = "9999"
@@ -23,7 +24,7 @@ function createOverlay() {
   overlay.style.alignItems = "center"
   overlay.style.color = "white"
   overlay.style.margin = "auto"
-  overlay.textContent = "We found these other items you might like!"
+  // overlay.textContent = "We found these other items you might like!"
 
   const closeButton = document.createElement("span")
   closeButton.style.position = "absolute"
@@ -89,7 +90,7 @@ function getDetails(titleXpath: string, locationXpath: string) {
       console.log("Could not find element for XPath: " + titleXpath)
       details.title = null
     } else {
-      details.title = title
+      details.title = title.match(/"(.*?)"/)[0]
     }
   } else {
     details.title = "Unknown"
@@ -149,6 +150,66 @@ chrome.runtime.onMessage.addListener((request) => {
           chrome.runtime.sendMessage({ type: "listingDetails", data: result })
         }
       }, 1000)
+    }
+  } else if (request.message === "Listings") {
+    console.log("Received listings:", request.data)
+    const overlay = document.querySelector("#zifty-overlay")
+    for (let i = 0; i < request.data.length && i < 3; i++) {
+      const listing = request.data[i]
+      console.log(listing)
+
+      // Container div for the listing
+      const listingDiv = document.createElement("div")
+      listingDiv.style.display = "inline-block"
+      listingDiv.style.margin = "1%"
+      listingDiv.style.width = "calc(30% - 1%)"
+      listingDiv.style.height = "95%" // Explicit height for each listing div
+      listingDiv.style.verticalAlign = "center"
+      listingDiv.style.boxSizing = "border-box"
+      listingDiv.style.overflow = "hidden" // This will clip off any overflowing parts
+      listingDiv.style.border = "1px solid white"
+      listingDiv.style.position = "relative"
+
+      // Link element
+      const linkElement = document.createElement("a")
+      linkElement.href = listing.link // Set the href to the listing's link
+      linkElement.target = "_blank" // Open link in a new tab
+      linkElement.style.width = "100%"
+      linkElement.style.height = "100%"
+      linkElement.style.display = "block" // Make sure it takes up the whole div
+
+      // Image element
+      const img = document.createElement("img")
+      img.src = listing.imageSrc
+      img.style.maxHeight = "100%" // Reduce max height to allow text space at the bottom
+      img.style.maxWidth = "100%"
+      img.style.objectFit = "contain"
+      img.style.display = "block"
+      img.style.margin = "auto"
+
+      // Span element for the title, to overlay on the image
+      const titleSpan = document.createElement("span")
+      titleSpan.textContent = `${listing.title}\n${listing.location}\n${listing.price}`
+      titleSpan.style.position = "absolute"
+      titleSpan.style.bottom = "0%" // Adjusted position to leave more space for location and price
+      titleSpan.style.left = "0"
+      titleSpan.style.width = "100%"
+      titleSpan.style.backgroundColor = "rgba(0, 0, 0, 0.5)"
+      titleSpan.style.color = "white"
+      titleSpan.style.padding = "1%" // Increased padding for better separation
+      titleSpan.style.textAlign = "center"
+      titleSpan.style.fontSize = "1rem"
+      titleSpan.style.whiteSpace = "pre-line" // Adjust font size if necessary
+
+      // Append the image and spans to the link element
+      linkElement.appendChild(img)
+      linkElement.appendChild(titleSpan)
+
+      // Append the link element to the listing div
+      listingDiv.appendChild(linkElement)
+
+      // Append the div to the overlay
+      overlay.appendChild(listingDiv)
     }
   }
 })
