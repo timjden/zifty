@@ -67,11 +67,14 @@ function getLatLongFromStyle(xpath: string) {
 }
 
 function getDetails(titleXpath: string, locationXpath: string) {
-  console.log("Getting details...")
   const title = getText(titleXpath)
-  console.log("Title: ", title)
+  if (title === null) {
+    console.log("Could not find element for XPath: " + titleXpath)
+  }
   const location = getLatLongFromStyle(locationXpath)
-  console.log("Location: ", location)
+  if (location === null) {
+    console.log("Could not find element for XPath: " + locationXpath)
+  }
   return {
     title,
     lat: location ? location.lat : null,
@@ -102,15 +105,13 @@ if (window.location.href.match(URL_PATTERN)) {
 // Check if the URL is a Facebook Marketplace listing when the URL changes
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.message === "URL changed") {
-    console.log("New URL: " + request.url)
     if (request.url.match(URL_PATTERN)) {
-      // Call onListingLoad periodically until it meets the condition
       let intervalId = setInterval(async () => {
         let result = await onListingLoad()
         if (!containsNullValues(result)) {
-          clearInterval(intervalId) // Stop calling when condition is met
+          clearInterval(intervalId)
         }
-      }, 1000) // Check every 1 second
+      }, 1000)
     }
   }
 })
