@@ -83,9 +83,11 @@ function getDetails(titleXpath: string, locationXpath: string) {
 }
 
 function onListingLoad() {
+  // When a Facebook Marketplace listing loads, create the overlay
   const overlay = createOverlay()
   document.body.appendChild(overlay)
 
+  // When a Facebook Marketplace listing loads, get the listing details
   const listingTitleXpath =
     "//span[@class = 'x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x14z4hjw x3x7a5m xngnso2 x1qb5hxa x1xlr1w8 xzsf02u']"
   const listingLocationXpath = "//*[contains(@style, 'MarketplaceStaticMap')]"
@@ -95,21 +97,25 @@ function onListingLoad() {
   return listingDetails
 }
 
-// Check if the current URL is a Facebook Marketplace listing
+// When the page loads, get the listing details (if it is a Facebook Marketplace listing URL) and send these to background.ts
 if (window.location.href.match(URL_PATTERN)) {
   window.addEventListener("load", () => {
-    onListingLoad()
+    let result = onListingLoad()
+    if (!containsNullValues(result)) {
+      chrome.runtime.sendMessage({ type: "listingDetails", data: result })
+    }
   })
 }
 
-// Check if the URL is a Facebook Marketplace listing when the URL changes
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+// When background.ts sends a message that the URL changed, get the listing details (if it is a Facebook Marketplace listing URL) and send these to background.ts
+chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     if (request.url.match(URL_PATTERN)) {
       let intervalId = setInterval(async () => {
-        let result = await onListingLoad()
+        let result = onListingLoad()
         if (!containsNullValues(result)) {
           clearInterval(intervalId)
+          chrome.runtime.sendMessage({ type: "listingDetails", data: result })
         }
       }, 1000)
     }
