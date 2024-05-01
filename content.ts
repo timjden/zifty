@@ -1,4 +1,7 @@
 const URL_PATTERN = /https:\/\/www\.facebook\.com\/marketplace\/item\//
+const TITLE_XPATH =
+  "//span[@class = 'x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x14z4hjw x3x7a5m xngnso2 x1qb5hxa x1xlr1w8 xzsf02u']"
+const LOCATION_XPATH = "//*[contains(@style, 'MarketplaceStaticMap')]"
 
 function createOverlay() {
   const overlay = document.createElement("div")
@@ -88,11 +91,7 @@ function onListingLoad() {
   document.body.appendChild(overlay)
 
   // When a Facebook Marketplace listing loads, get the listing details
-  const listingTitleXpath =
-    "//span[@class = 'x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x14z4hjw x3x7a5m xngnso2 x1qb5hxa x1xlr1w8 xzsf02u']"
-  const listingLocationXpath = "//*[contains(@style, 'MarketplaceStaticMap')]"
-
-  const listingDetails = getDetails(listingTitleXpath, listingLocationXpath)
+  const listingDetails = getDetails(TITLE_XPATH, LOCATION_XPATH)
   console.log(listingDetails)
   return listingDetails
 }
