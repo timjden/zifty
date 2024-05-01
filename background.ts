@@ -9,15 +9,18 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 })
 
 // Receive the listing details from content.ts
-chrome.runtime.onMessage.addListener(async (request) => {
+chrome.runtime.onMessage.addListener(async (request, sender) => {
   if (request.type === "listingDetails") {
     console.log("Received result:", request.data)
     const fbListings = await fetchFromFacebookMarketplace(
-      "bed",
+      request.data.title,
       { latitude: -33.9874, longitude: 18.4649 },
       100
     )
-    console.log(fbListings)
+    chrome.tabs.sendMessage(sender.tab.id, {
+      message: "Listings",
+      data: fbListings
+    })
   }
   return true
 })
