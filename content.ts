@@ -1,7 +1,11 @@
-const URL_PATTERN = /https:\/\/www\.facebook\.com\/marketplace\/item\//
+const URL_PATTERN = /https:\/\/www\.takealot\.com\/all\?/
 const TITLE_XPATH =
-  "//span[@class = 'x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x14z4hjw x3x7a5m xngnso2 x1qb5hxa x1xlr1w8 xzsf02u']"
-const LOCATION_XPATH = "//*[contains(@style, 'MarketplaceStaticMap')]"
+  "//div[@class = 'search-count  search-count-module_search-count_1oyVQ']"
+
+//"//span[@class = 'x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x14z4hjw x3x7a5m xngnso2 x1qb5hxa x1xlr1w8 xzsf02u']"
+
+const LOCATION_XPATH = null
+//"//*[contains(@style, 'MarketplaceStaticMap')]"
 
 function createOverlay() {
   const overlay = document.createElement("div")
@@ -39,6 +43,7 @@ function createOverlay() {
 }
 
 function getText(xpath: string) {
+  console.log("Getting text for xpath: " + xpath)
   const result = document.evaluate(
     xpath,
     document,
@@ -50,6 +55,7 @@ function getText(xpath: string) {
 }
 
 function getLatLongFromStyle(xpath: string) {
+  console.log("Getting lat long for xpath: " + xpath)
   const result = document.evaluate(
     xpath,
     document,
@@ -70,19 +76,42 @@ function getLatLongFromStyle(xpath: string) {
 }
 
 function getDetails(titleXpath: string, locationXpath: string) {
-  const title = getText(titleXpath)
-  if (title === null) {
-    console.log("Could not find element for XPath: " + titleXpath)
+  let details = {
+    title: null,
+    lat: null,
+    long: null
   }
-  const location = getLatLongFromStyle(locationXpath)
-  if (location === null) {
-    console.log("Could not find element for XPath: " + locationXpath)
+
+  if (titleXpath != null) {
+    const title = getText(titleXpath)
+    console.log(title)
+    if (title === null) {
+      console.log("Could not find element for XPath: " + titleXpath)
+      details.title = null
+    } else {
+      details.title = title
+    }
+  } else {
+    details.title = "Unknown"
   }
-  return {
-    title,
-    lat: location ? location.lat : null,
-    long: location ? location.long : null
+
+  if (locationXpath != null) {
+    const location = getLatLongFromStyle(locationXpath)
+    console.log(location)
+    if (location === null) {
+      console.log("Could not find element for XPath: " + locationXpath)
+      details.lat = null
+      details.long = null
+    } else {
+      details.lat = location.lat
+      details.long = location.long
+    }
+  } else {
+    details.lat = 0.0
+    details.long = 0.0
   }
+
+  return details
 }
 
 function onListingLoad() {
@@ -99,10 +128,13 @@ function onListingLoad() {
 // When the page loads, get the listing details (if it is a Facebook Marketplace listing URL) and send these to background.ts
 if (window.location.href.match(URL_PATTERN)) {
   window.addEventListener("load", () => {
-    let result = onListingLoad()
-    if (!containsNullValues(result)) {
-      chrome.runtime.sendMessage({ type: "listingDetails", data: result })
-    }
+    let intervalId = setInterval(async () => {
+      let result = onListingLoad()
+      if (!containsNullValues(result)) {
+        clearInterval(intervalId)
+        chrome.runtime.sendMessage({ type: "listingDetails", data: result })
+      }
+    }, 1000)
   })
 }
 
