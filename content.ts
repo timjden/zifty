@@ -2,10 +2,7 @@ const URL_PATTERN = /https:\/\/www\.takealot\.com\/all\?/
 const TITLE_XPATH =
   "//div[@class = 'search-count toolbar-module_search-count_P0ViI search-count-module_search-count_1oyVQ']"
 
-//"//span[@class = 'x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x14z4hjw x3x7a5m xngnso2 x1qb5hxa x1xlr1w8 xzsf02u']"
-
 const LOCATION_XPATH = null
-//"//*[contains(@style, 'MarketplaceStaticMap')]"
 
 function createOverlay() {
   const overlay = document.createElement("div")
@@ -24,7 +21,6 @@ function createOverlay() {
   overlay.style.alignItems = "center"
   overlay.style.color = "white"
   overlay.style.margin = "auto"
-  // overlay.textContent = "We found these other items you might like!"
 
   const closeButton = document.createElement("span")
   closeButton.style.position = "absolute"
@@ -116,17 +112,13 @@ function getDetails(titleXpath: string, locationXpath: string) {
 }
 
 function onListingLoad() {
-  // When a Facebook Marketplace listing loads, create the overlay
-  const overlay = createOverlay()
-  document.body.appendChild(overlay)
-
-  // When a Facebook Marketplace listing loads, get the listing details
+  // When a listing loads, get the listing details
   const listingDetails = getDetails(TITLE_XPATH, LOCATION_XPATH)
   console.log(listingDetails)
   return listingDetails
 }
 
-// When the page loads, get the listing details (if it is a Facebook Marketplace listing URL) and send these to background.ts
+// When the page loads, get the listing details (if it is a listing URL) and send these to background.ts
 if (window.location.href.match(URL_PATTERN)) {
   window.addEventListener("load", () => {
     let intervalId = setInterval(async () => {
@@ -139,7 +131,7 @@ if (window.location.href.match(URL_PATTERN)) {
   })
 }
 
-// When background.ts sends a message that the URL changed, get the listing details (if it is a Facebook Marketplace listing URL) and send these to background.ts
+// When background.ts sends a message that the URL changed, get the listing details (if it is a listing URL) and send these to background.ts
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     if (request.url.match(URL_PATTERN)) {
@@ -153,7 +145,14 @@ chrome.runtime.onMessage.addListener((request) => {
     }
   } else if (request.message === "Listings") {
     console.log("Received listings:", request.data)
-    const overlay = document.querySelector("#zifty-overlay")
+
+    // When a Facebook Marketplace listing loads, create the overlay...
+    if (document.getElementById("zifty-overlay")) {
+      document.body.removeChild(document.getElementById("zifty-overlay"))
+    }
+    const overlay = createOverlay()
+
+    // ... And populate the overlay with the listings
     for (let i = 0; i < request.data.length && i < 3; i++) {
       const listing = request.data[i]
       console.log(listing)
@@ -211,6 +210,9 @@ chrome.runtime.onMessage.addListener((request) => {
       // Append the div to the overlay
       overlay.appendChild(listingDiv)
     }
+
+    // Then append the overlay to the body
+    document.body.appendChild(overlay)
   }
 })
 
