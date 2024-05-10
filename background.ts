@@ -1,7 +1,6 @@
 // Send a message to content.ts if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   if (tab.url && tab.status === "complete") {
-    console.log("Tab has loaded")
     chrome.tabs.sendMessage(tabId, {
       message: "URL changed",
       url: tab.url
@@ -28,10 +27,7 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
 })
 
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
-  console.log(query)
-  console.log(coordinates)
-  console.log(radius)
-  console.log("Fetching from Facebook Marketplace")
+  console.log("Fetching from Facebook Marketplace...")
   try {
     const url = "https://www.facebook.com/api/graphql/"
 
@@ -85,8 +81,6 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
       }
     }
 
-    console.log(variables)
-
     const payload = `variables=${encodeURIComponent(
       JSON.stringify(variables)
     )}&doc_id=7897349150275834&server_timestamps=true&fb_dtsg=`
@@ -98,7 +92,6 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
       credentials: "omit"
     })
     const data = await response.json()
-    console.log(data)
     let listings = []
 
     if (
