@@ -1,9 +1,10 @@
 // Send a message to content.ts if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-  if (changeInfo.url) {
+  if (tab.url && tab.status === "complete") {
+    console.log("Tab has loaded")
     chrome.tabs.sendMessage(tabId, {
       message: "URL changed",
-      url: changeInfo.url
+      url: tab.url
     })
   }
 })
@@ -17,6 +18,7 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
       { latitude: -33.9874, longitude: 18.4649 },
       100
     )
+    console.log("Number of listings:", fbListings.length)
     chrome.tabs.sendMessage(sender.tab.id, {
       message: "Listings",
       data: fbListings
