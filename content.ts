@@ -72,57 +72,65 @@ function getLatLongFromStyle(xpath: string) {
   return null
 }
 
-function getDetails(titleXpath: string, locationXpath: string) {
+// Function to get the user's latitude and longitude
+function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
+  return new Promise((resolve, reject) => {
+    console.log(navigator)
+    if (!navigator.geolocation) {
+      reject("Geolocation is not supported by this browser.")
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        })
+      },
+      (error) => {
+        reject(`Error getting location: ${error.message}`)
+      }
+    )
+  })
+}
+
+async function getDetails(titleXpath: string, locationXpath: string) {
   let details = {
     title: null,
-    lat: null,
-    long: null
+    latitude: null,
+    longitude: null
   }
 
-  if (titleXpath != null) {
-    const title = getText(titleXpath)
-    console.log(title)
-    if (title === null) {
-      console.log("Could not find element for XPath: " + titleXpath)
-      details.title = null
-    } else {
-      details.title = title.match(/"(.*?)"/)[0]
-    }
+  const title = getText(titleXpath)
+  console.log(title)
+  if (title === null) {
+    console.log("Could not find element for XPath: " + titleXpath)
+    details.title = null
   } else {
-    details.title = "Unknown"
+    details.title = title.match(/"(.*?)"/)[0]
   }
 
-  if (locationXpath != null) {
-    const location = getLatLongFromStyle(locationXpath)
-    console.log(location)
-    if (location === null) {
-      console.log("Could not find element for XPath: " + locationXpath)
-      details.lat = null
-      details.long = null
-    } else {
-      details.lat = location.lat
-      details.long = location.long
-    }
-  } else {
-    details.lat = 0.0
-    details.long = 0.0
-  }
+  const location = await getUserLocation()
+  console.log(location)
+  details.latitude = location.latitude
+  details.longitude = location.longitude
 
   return details
 }
 
-function onListingLoad() {
+async function onListingLoad() {
   // When a listing loads, get the listing details
-  const listingDetails = getDetails(TITLE_XPATH, LOCATION_XPATH)
+  const listingDetails = await getDetails(TITLE_XPATH, LOCATION_XPATH)
   console.log(listingDetails)
   return listingDetails
 }
 
 // When the page loads, get the listing details (if it is a listing URL) and send these to background.ts
 if (window.location.href.match(URL_PATTERN)) {
-  window.addEventListener("load", () => {
+  window.addEventListener("load", async () => {
     let intervalId = setInterval(async () => {
-      let result = onListingLoad()
+      let result = await onListingLoad()
       if (!containsNullValues(result)) {
         clearInterval(intervalId)
         chrome.runtime.sendMessage({ type: "listingDetails", data: result })
@@ -136,7 +144,7 @@ chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     if (request.url.match(URL_PATTERN)) {
       let intervalId = setInterval(async () => {
-        let result = onListingLoad()
+        let result = await onListingLoad()
         if (!containsNullValues(result)) {
           clearInterval(intervalId)
           chrome.runtime.sendMessage({ type: "listingDetails", data: result })
