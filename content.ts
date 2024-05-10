@@ -51,27 +51,6 @@ function getText(xpath: string) {
   return result.singleNodeValue ? result.singleNodeValue.textContent : null
 }
 
-function getLatLongFromStyle(xpath: string) {
-  console.log("Getting lat long for xpath: " + xpath)
-  const result = document.evaluate(
-    xpath,
-    document,
-    null,
-    XPathResult.FIRST_ORDERED_NODE_TYPE,
-    null
-  )
-  if (result.singleNodeValue) {
-    const style = (result.singleNodeValue as HTMLElement).getAttribute("style")
-    if (style) {
-      const latLong = style.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/)
-      if (latLong) {
-        return { lat: parseFloat(latLong[1]), long: parseFloat(latLong[2]) }
-      }
-    }
-  }
-  return null
-}
-
 // Function to get the user's latitude and longitude
 function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
   return new Promise((resolve, reject) => {
@@ -93,7 +72,7 @@ function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
   })
 }
 
-async function getDetails(queryXpath: string, locationXpath: string) {
+async function getDetails(queryXpath: string) {
   let details = {
     query: null,
     latitude: null,
@@ -119,7 +98,7 @@ async function getDetails(queryXpath: string, locationXpath: string) {
 
 async function onPageLoad() {
   // When a page loads, get the search details
-  const searchDetails = await getDetails(QUERY_XPATH, LOCATION_XPATH)
+  const searchDetails = await getDetails(QUERY_XPATH)
   console.log(searchDetails)
   return searchDetails
 }
@@ -161,7 +140,6 @@ chrome.runtime.onMessage.addListener((request) => {
     // ... And populate the overlay with the listings
     for (let i = 0; i < request.data.length && i < 3; i++) {
       const listing = request.data[i]
-      console.log(listing)
 
       // Container div for the listing
       const listingDiv = document.createElement("div")
