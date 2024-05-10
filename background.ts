@@ -15,7 +15,7 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
     console.log("Received result:", request.data)
     const fbListings = await fetchFromFacebookMarketplace(
       request.data.title,
-      { latitude: -33.9874, longitude: 18.4649 },
+      { latitude: request.data.latitude, longitude: request.data.longitude },
       100
     )
     console.log("Number of listings:", fbListings.length)
