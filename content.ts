@@ -80,7 +80,6 @@ async function getDetails(queryXpath: string) {
   }
 
   const query = getText(queryXpath)
-  console.log(query)
   if (query === null) {
     console.log("Could not find element for XPath: " + queryXpath)
     details.query = null
@@ -89,7 +88,6 @@ async function getDetails(queryXpath: string) {
   }
 
   const location = await getUserLocation()
-  console.log(location)
   details.latitude = location.latitude
   details.longitude = location.longitude
 
@@ -129,8 +127,6 @@ chrome.runtime.onMessage.addListener((request) => {
       }, 1000)
     }
   } else if (request.message === "Listings") {
-    console.log("Received listings:", request.data)
-
     // When the listings are received from background.ts, create the overlay...
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"))
