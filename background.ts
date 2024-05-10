@@ -80,7 +80,7 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
       scale: 1,
       shouldIncludePopularSearches: false,
       topicPageParams: {
-        location_id: "capetown",
+        location_id: "",
         url: null
       }
     }
