@@ -9,12 +9,12 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   }
 })
 
-// Receive the listing details from content.ts
+// Receive the search details from content.ts
 chrome.runtime.onMessage.addListener(async (request, sender) => {
-  if (request.type === "listingDetails") {
+  if (request.type === "searchDetails") {
     console.log("Received result:", request.data)
     const fbListings = await fetchFromFacebookMarketplace(
-      request.data.title,
+      request.data.query,
       { latitude: request.data.latitude, longitude: request.data.longitude },
       30 // radius
     )

@@ -1,5 +1,5 @@
 const URL_PATTERN = /https:\/\/www\.takealot\.com\/all\?/
-const TITLE_XPATH =
+const QUERY_XPATH =
   "//div[@class = 'search-count toolbar-module_search-count_P0ViI search-count-module_search-count_1oyVQ']"
 
 const LOCATION_XPATH = null
@@ -75,12 +75,10 @@ function getLatLongFromStyle(xpath: string) {
 // Function to get the user's latitude and longitude
 function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
   return new Promise((resolve, reject) => {
-    console.log(navigator)
     if (!navigator.geolocation) {
       reject("Geolocation is not supported by this browser.")
       return
     }
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
@@ -95,20 +93,20 @@ function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
   })
 }
 
-async function getDetails(titleXpath: string, locationXpath: string) {
+async function getDetails(queryXpath: string, locationXpath: string) {
   let details = {
-    title: null,
+    query: null,
     latitude: null,
     longitude: null
   }
 
-  const title = getText(titleXpath)
-  console.log(title)
-  if (title === null) {
-    console.log("Could not find element for XPath: " + titleXpath)
-    details.title = null
+  const query = getText(queryXpath)
+  console.log(query)
+  if (query === null) {
+    console.log("Could not find element for XPath: " + queryXpath)
+    details.query = null
   } else {
-    details.title = title.match(/"(.*?)"/)[0]
+    details.query = query.match(/"(.*?)"/)[0]
   }
 
   const location = await getUserLocation()
@@ -119,42 +117,42 @@ async function getDetails(titleXpath: string, locationXpath: string) {
   return details
 }
 
-async function onListingLoad() {
-  // When a listing loads, get the listing details
-  const listingDetails = await getDetails(TITLE_XPATH, LOCATION_XPATH)
-  console.log(listingDetails)
-  return listingDetails
+async function onPageLoad() {
+  // When a page loads, get the search details
+  const searchDetails = await getDetails(QUERY_XPATH, LOCATION_XPATH)
+  console.log(searchDetails)
+  return searchDetails
 }
 
-// When the page loads, get the listing details (if it is a listing URL) and send these to background.ts
+// When the page loads, get the search details and send these to background.ts
 if (window.location.href.match(URL_PATTERN)) {
   window.addEventListener("load", async () => {
     let intervalId = setInterval(async () => {
-      let result = await onListingLoad()
+      let result = await onPageLoad()
       if (!containsNullValues(result)) {
         clearInterval(intervalId)
-        chrome.runtime.sendMessage({ type: "listingDetails", data: result })
+        chrome.runtime.sendMessage({ type: "searchDetails", data: result })
       }
     }, 1000)
   })
 }
 
-// When background.ts sends a message that the URL changed, get the listing details (if it is a listing URL) and send these to background.ts
+// When background.ts sends a message that the URL changed, get the search details and send these to background.ts
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     if (request.url.match(URL_PATTERN)) {
       let intervalId = setInterval(async () => {
-        let result = await onListingLoad()
+        let result = await onPageLoad()
         if (!containsNullValues(result)) {
           clearInterval(intervalId)
-          chrome.runtime.sendMessage({ type: "listingDetails", data: result })
+          chrome.runtime.sendMessage({ type: "searchDetails", data: result })
         }
       }, 1000)
     }
   } else if (request.message === "Listings") {
     console.log("Received listings:", request.data)
 
-    // When a Facebook Marketplace listing loads, create the overlay...
+    // When the listings are received from background.ts, create the overlay...
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"))
     }
