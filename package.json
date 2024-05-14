@@ -29,7 +29,8 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
+      "https://www.takealot.com/all?*",
+      "https://www.facebook.com/api/graphql/"
     ]
   }
 }
