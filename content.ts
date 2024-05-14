@@ -127,13 +127,23 @@ chrome.runtime.onMessage.addListener((request) => {
       }, 1000)
     }
   } else if (request.message === "Listings") {
-    // When the listings are received from background.ts, create the overlay...
+    // When the listings are received from background.ts, create the overlay
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"))
     }
+
     const overlay = createOverlay()
 
-    // ... And populate the overlay with the listings
+    // If there are no listings, display a message and return
+    if (request.data.length === 0) {
+      const noListings = document.createElement("span")
+      noListings.textContent = "No listings found."
+      overlay.appendChild(noListings)
+      document.body.appendChild(overlay)
+      return
+    }
+
+    // Otherwise, populate the overlay with the listings
     for (let i = 0; i < request.data.length && i < 3; i++) {
       const listing = request.data[i]
 
