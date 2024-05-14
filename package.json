@@ -2,7 +2,7 @@
   "name": "zifty",
   "displayName": "Zifty",
   "version": "0.0.1",
-  "description": "Alternatives to Facebook Marketplace listings.",
+  "description": "Secondhand alternatives to firsthand products!",
   "author": "Tim Dennis",
   "engines": {
     "npm": ">=7.0.0",
