@@ -1,4 +1,9 @@
-const URL_PATTERN = /https:\/\/www\.takealot\.com\/all\?/
+import type { PlasmoCSConfig } from "plasmo"
+
+export const config: PlasmoCSConfig = {
+  matches: ["https://www.takealot.com/all?*"]
+}
+
 const QUERY_XPATH =
   "//div[@class = 'search-count toolbar-module_search-count_P0ViI search-count-module_search-count_1oyVQ']"
 
@@ -102,8 +107,19 @@ async function onPageLoad() {
 }
 
 // When the page loads, get the search details and send these to background.ts
-if (window.location.href.match(URL_PATTERN)) {
-  window.addEventListener("load", async () => {
+window.addEventListener("load", async () => {
+  let intervalId = setInterval(async () => {
+    let result = await onPageLoad()
+    if (!containsNullValues(result)) {
+      clearInterval(intervalId)
+      chrome.runtime.sendMessage({ type: "searchDetails", data: result })
+    }
+  }, 1000)
+})
+
+// When background.ts sends a message that the URL changed, get the search details and send these to background.ts
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.message === "URL changed") {
     let intervalId = setInterval(async () => {
       let result = await onPageLoad()
       if (!containsNullValues(result)) {
@@ -111,21 +127,6 @@ if (window.location.href.match(URL_PATTERN)) {
         chrome.runtime.sendMessage({ type: "searchDetails", data: result })
       }
     }, 1000)
-  })
-}
-
-// When background.ts sends a message that the URL changed, get the search details and send these to background.ts
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.message === "URL changed") {
-    if (request.url.match(URL_PATTERN)) {
-      let intervalId = setInterval(async () => {
-        let result = await onPageLoad()
-        if (!containsNullValues(result)) {
-          clearInterval(intervalId)
-          chrome.runtime.sendMessage({ type: "searchDetails", data: result })
-        }
-      }, 1000)
-    }
   } else if (request.message === "Listings") {
     // When the listings are received from background.ts, create the overlay
     if (document.getElementById("zifty-overlay")) {
