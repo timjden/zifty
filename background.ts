@@ -1,6 +1,6 @@
 // Send a message to content.ts if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-  if (tab.url && tab.status === "complete") {
+  if (tab.url && tab.status === "complete" && tab.active) {
     chrome.tabs.sendMessage(tabId, {
       message: "URL changed",
       url: tab.url
