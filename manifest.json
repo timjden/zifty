@@ -1,0 +1,29 @@
+{
+  "name": "Zifty",
+  "version": "1.0",
+  "description": "Secondhand alternatives to firsthand products!",
+  "author": "Zifty",
+  "manifest_version": 3,
+  "permissions": ["offscreen", "geolocation"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.takealot.com/all?*"],
+      "js": ["content.js"]
+    }
+  ],
+  "host_permissions": [
+    "https://www.takealot.com/all?*",
+    "https://www.facebook.com/api/graphql/"
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "64": "icon64.png",
+    "128": "icon128.png"
+  }
+}

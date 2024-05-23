@@ -1,47 +1,54 @@
+import { logLocation } from "./geolocation.js";
+
 // Send a message to content.ts if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   if (tab.url && tab.status === "complete" && tab.active) {
     chrome.tabs.sendMessage(tabId, {
       message: "URL changed",
-      url: tab.url
-    })
+      url: tab.url,
+    });
   }
-})
+});
 
 // Receive the search details from content.ts
 chrome.runtime.onMessage.addListener(async (request, sender) => {
   if (request.type === "searchDetails") {
-    console.log("Received result:", request.data)
+    console.log("Received result:", request.data);
+    const location = await logLocation();
+    console.log("Location:", location);
     const fbListings = await fetchFromFacebookMarketplace(
       request.data.query,
-      { latitude: request.data.latitude, longitude: request.data.longitude },
+      {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      },
       30 // radius
-    )
-    console.log("Number of listings:", fbListings.length)
+    );
+    console.log("Number of listings:", fbListings.length);
     chrome.tabs.sendMessage(sender.tab.id, {
       message: "Listings",
-      data: fbListings
-    })
+      data: fbListings,
+    });
   }
-  return true
-})
+  return true;
+});
 
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
-  console.log("Fetching from Facebook Marketplace...")
+  console.log("Fetching from Facebook Marketplace...");
   try {
-    const url = "https://www.facebook.com/api/graphql/"
+    const url = "https://www.facebook.com/api/graphql/";
 
     const headers = {
       "sec-fetch-site": "same-origin",
       "user-agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.62",
-      "content-type": "application/x-www-form-urlencoded"
-    }
+      "content-type": "application/x-www-form-urlencoded",
+    };
 
     const variables = {
       buyLocation: {
         latitude: coordinates.latitude,
-        longitude: coordinates.longitude
+        longitude: coordinates.longitude,
       },
       contextual_data: null,
       count: 24,
@@ -58,7 +65,7 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
           filter_location_longitude: coordinates.longitude,
           filter_price_lower_bound: 0,
           filter_price_upper_bound: 214748364700,
-          filter_radius_km: radius
+          filter_radius_km: radius,
         },
         custom_request_params: {
           browse_context: null,
@@ -68,8 +75,8 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
           search_vertical: "C2C",
           seo_url: null,
           surface: "SEARCH",
-          virtual_contextual_filters: []
-        }
+          virtual_contextual_filters: [],
+        },
       },
       savedSearchID: null,
       savedSearchQuery: query,
@@ -77,27 +84,27 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
       shouldIncludePopularSearches: false,
       topicPageParams: {
         location_id: "",
-        url: null
-      }
-    }
+        url: null,
+      },
+    };
 
     const payload = `variables=${encodeURIComponent(
       JSON.stringify(variables)
-    )}&doc_id=7897349150275834&server_timestamps=true&fb_dtsg=`
+    )}&doc_id=7897349150275834&server_timestamps=true&fb_dtsg=`;
 
     const response = await fetch(url, {
       method: "POST",
       headers,
       body: payload,
-      credentials: "omit"
-    })
-    const data = await response.json()
-    let listings = []
+      credentials: "omit",
+    });
+    const data = await response.json();
+    let listings = [];
 
     if (
       !data.data?.marketplace_search?.feed_units?.edges[0]?.node?.listing?.id
     ) {
-      listings = []
+      listings = [];
     } else {
       listings = data.data.marketplace_search.feed_units.edges.map((edge) => {
         return {
@@ -106,13 +113,59 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
           link: `https://www.facebook.com/marketplace/item/${edge.node.listing.id}`,
           title: edge.node.listing.marketplace_listing_title,
           price: edge.node.listing.listing_price.formatted_amount,
-          location: edge.node.listing.location.reverse_geocode.city
-        }
-      })
+          location: edge.node.listing.location.reverse_geocode.city,
+        };
+      });
     }
 
-    return listings
+    return listings;
   } catch (error) {
-    console.error("Error fetching from Marketplace:", error)
+    console.error("Error fetching from Marketplace:", error);
   }
+}
+
+// Geolocation stuff
+let creating = null;
+
+async function getGeolocation() {
+  await setupOffscreenDocument("/offscreen.html");
+  const geolocation = await chrome.runtime.sendMessage({
+    type: "get-geolocation",
+    target: "offscreen",
+  });
+  await closeOffscreenDocument();
+  return geolocation;
+}
+
+async function hasDocument() {
+  // Check if the offscreen document already exists
+  return await chrome.offscreen.hasDocument();
+}
+
+async function setupOffscreenDocument(path) {
+  // If the document exists, we skip creation
+  if (await hasDocument()) {
+    return;
+  }
+
+  // Create offscreen document if not already creating one
+  if (creating) {
+    await creating;
+  } else {
+    creating = chrome.offscreen.createDocument({
+      url: path,
+      reasons: [chrome.offscreen.Reason.GEOLOCATION],
+      justification: "geolocation access",
+    });
+
+    await creating;
+    creating = null;
+  }
+}
+
+async function closeOffscreenDocument() {
+  if (!(await hasDocument())) {
+    return;
+  }
+  await chrome.offscreen.closeDocument();
 }
