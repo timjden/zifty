@@ -169,3 +169,5 @@ async function closeOffscreenDocument() {
   }
   await chrome.offscreen.closeDocument();
 }
+
+export { fetchFromFacebookMarketplace };

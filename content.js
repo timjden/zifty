@@ -50,32 +50,9 @@ function getText(xpath) {
   return result.singleNodeValue ? result.singleNodeValue.textContent : null;
 }
 
-// // Function to get the user's latitude and longitude
-// function getUserLocation() {
-//   return new Promise((resolve, reject) => {
-//     if (!navigator.geolocation) {
-//       reject("Geolocation is not supported by this browser.");
-//       return;
-//     }
-//     navigator.geolocation.getCurrentPosition(
-//       (position) => {
-//         resolve({
-//           latitude: position.coords.latitude,
-//           longitude: position.coords.longitude,
-//         });
-//       },
-//       (error) => {
-//         reject(`Error getting location: ${error.message}`);
-//       }
-//     );
-//   });
-// }
-
 async function getDetails(queryXpath) {
   let details = {
     query: null,
-    // latitude: null,
-    // longitude: null,
   };
 
   const query = getText(queryXpath);
@@ -85,10 +62,6 @@ async function getDetails(queryXpath) {
   } else {
     details.query = query.match(/"(.*?)"/)[0];
   }
-
-  // const location = await getUserLocation();
-  // details.latitude = location.latitude;
-  // details.longitude = location.longitude;
 
   return details;
 }
