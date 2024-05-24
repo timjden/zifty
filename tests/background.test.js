@@ -14,3 +14,17 @@ test("request to fb marketplace with cape town location and query 'bicycle' retu
   expect(Array.isArray(listings)).toBe(true);
   expect(listings.length).toBeGreaterThan(0);
 });
+
+test("request to fb marketplace with hoofdorp location and query 'fiets' returns results", async () => {
+  const listings = await fetchFromFacebookMarketplace(
+    "fiets",
+    {
+      latitude: 52.3061,
+      longitude: 4.6907,
+    },
+    30
+  );
+  console.log(listings);
+  expect(Array.isArray(listings)).toBe(true);
+  expect(listings.length).toBeGreaterThan(0);
+});
