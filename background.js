@@ -22,7 +22,7 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       },
-      30 // radius
+      8 // radius
     );
     console.log("Number of listings:", fbListings.length);
     chrome.tabs.sendMessage(sender.tab.id, {
