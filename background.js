@@ -10,7 +10,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   }
 });
 
-// Receive the search details from content.ts
+// Receive the search details from content.js
 chrome.runtime.onMessage.addListener(async (request, sender) => {
   if (request.type === "searchDetails") {
     console.log("Received result:", request.data);

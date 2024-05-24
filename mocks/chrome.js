@@ -1,4 +1,4 @@
-// __mocks__/chrome.js
+// mocks/chrome.js
 const chrome = {
   runtime: {
     lastError: null,

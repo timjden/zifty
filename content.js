@@ -1,5 +1,4 @@
-const QUERY_XPATH =
-  "//div[@class = 'search-count toolbar-module_search-count_P0ViI search-count-module_search-count_1oyVQ']";
+const QUERY_PARAM_NAME = "qsearch";
 
 const LOCATION_XPATH = null;
 
@@ -38,29 +37,24 @@ function createOverlay() {
   return overlay;
 }
 
-function getText(xpath) {
-  console.log("Getting text for xpath: " + xpath);
-  const result = document.evaluate(
-    xpath,
-    document,
-    null,
-    XPathResult.FIRST_ORDERED_NODE_TYPE,
-    null
-  );
-  return result.singleNodeValue ? result.singleNodeValue.textContent : null;
+function getQuery(queryParamName) {
+  const url = window.location.href;
+  const urlObj = new URL(url);
+  const queryParams = new URLSearchParams(urlObj.search);
+  return queryParams.get(queryParamName);
 }
 
-async function getDetails(queryXpath) {
+function getDetails(queryParamName) {
   let details = {
     query: null,
   };
 
-  const query = getText(queryXpath);
+  const query = getQuery(queryParamName);
   if (query === null) {
-    console.log("Could not find element for XPath: " + queryXpath);
+    console.log(`Could not find query ${queryParamName} in URL`);
     details.query = null;
   } else {
-    details.query = query.match(/"(.*?)"/)[0];
+    details.query = query;
   }
 
   return details;
@@ -68,12 +62,12 @@ async function getDetails(queryXpath) {
 
 async function onPageLoad() {
   // When a page loads, get the search details
-  const searchDetails = await getDetails(QUERY_XPATH);
+  const searchDetails = getDetails(QUERY_PARAM_NAME);
   console.log(searchDetails);
   return searchDetails;
 }
 
-// When the page loads, get the search details and send these to background.ts
+// When the page loads, get the search details and send these to background
 window.addEventListener("load", async () => {
   let intervalId = setInterval(async () => {
     let result = await onPageLoad();
@@ -84,7 +78,7 @@ window.addEventListener("load", async () => {
   }, 1000);
 });
 
-// When background.ts sends a message that the URL changed, get the search details and send these to background.ts
+// When background sends a message that the URL changed, get the search details and send these to background
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     let intervalId = setInterval(async () => {
@@ -95,7 +89,7 @@ chrome.runtime.onMessage.addListener((request) => {
       }
     }, 1000);
   } else if (request.message === "Listings") {
-    // When the listings are received from background.ts, create the overlay
+    // When the listings are received from background, create the overlay
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"));
     }
