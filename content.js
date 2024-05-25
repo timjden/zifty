@@ -1,6 +1,8 @@
 const QUERY_PARAM_NAME = "qsearch";
 const LOCATION_XPATH = null;
 const ITEMS_PER_OVERLAY_PAGE = 6;
+let pageNumber = 0;
+let startIndex = 0;
 
 function createOverlay() {
   const overlay = document.createElement("div");
@@ -111,7 +113,7 @@ chrome.runtime.onMessage.addListener((request) => {
 
     // Otherwise if there are more than ITEMS_PER_OVERLAY_PAGE listings, create a next arrow
     if (request.data.length > ITEMS_PER_OVERLAY_PAGE) {
-      createNextArrow(overlay);
+      createNextArrow(request, overlay);
     }
 
     // Then populate the overlay with the listings
@@ -119,22 +121,106 @@ chrome.runtime.onMessage.addListener((request) => {
   }
 });
 
-function createNextArrow(overlay) {
+function createNextArrow(request, overlay) {
   const nextArrow = document.createElement("span");
+  nextArrow.id = "next-arrow";
   nextArrow.style.position = "absolute";
   nextArrow.style.top = "50%";
   nextArrow.style.right = "5px";
+  nextArrow.style.fontSize = "1.5rem";
   nextArrow.textContent = ">";
   nextArrow.style.cursor = "pointer";
   overlay.appendChild(nextArrow);
 
   nextArrow.addEventListener("click", function () {
+    pageNumber += 1;
+    startIndex = pageNumber * ITEMS_PER_OVERLAY_PAGE;
+
+    console.log(`Start Index: ${startIndex}`);
+    console.log(`Page Number: ${pageNumber}`);
+    console.log(`Items per Page: ${ITEMS_PER_OVERLAY_PAGE}`);
+
+    // Don't go to the next page if there are no more listings
+    if (startIndex > request.data.length) {
+      pageNumber -= 1;
+      startIndex = pageNumber * ITEMS_PER_OVERLAY_PAGE;
+      return;
+    }
+
+    // Remove the next arrow if there on the last page
+    if (startIndex + ITEMS_PER_OVERLAY_PAGE >= request.data.length) {
+      removeNextArrow(overlay);
+    }
+
+    // Create a previous arrow if page number is greater than 0 and it does not exist already
+    if (pageNumber > 0 && !overlay.querySelector("#previous-arrow")) {
+      createPreviousArrow(request, overlay);
+    }
+
     clearOverlay(overlay);
+    populateOverlay(request, overlay);
   });
 }
 
+function removeNextArrow(overlay) {
+  console.log("Removing next arrow");
+  const nextArrow = overlay.querySelector("#next-arrow");
+  if (nextArrow) {
+    nextArrow.parentNode.removeChild(nextArrow);
+  }
+}
+
+function createPreviousArrow(request, overlay) {
+  const previousArrow = document.createElement("span");
+  previousArrow.id = "previous-arrow";
+  previousArrow.style.position = "absolute";
+  previousArrow.style.top = "50%";
+  previousArrow.style.left = "5px";
+  previousArrow.style.fontSize = "1.5rem";
+  previousArrow.textContent = "<";
+  previousArrow.style.cursor = "pointer";
+  overlay.appendChild(previousArrow);
+
+  previousArrow.addEventListener("click", function () {
+    pageNumber -= 1;
+    startIndex = pageNumber * ITEMS_PER_OVERLAY_PAGE;
+
+    console.log(`Start Index: ${startIndex}`);
+    console.log(`Page Number: ${pageNumber}`);
+    console.log(`Items per Page: ${ITEMS_PER_OVERLAY_PAGE}`);
+
+    if (pageNumber === 0) {
+      removePreviousArrow(overlay);
+    }
+
+    // Next arrow should be created if it doesn't exist
+    const nextArrow = overlay.querySelector("#next-arrow");
+    if (!nextArrow) {
+      createNextArrow(request, overlay);
+    }
+
+    if (pageNumber < 0) {
+      return;
+    }
+    clearOverlay(overlay);
+    populateOverlay(request, overlay);
+  });
+}
+
+function removePreviousArrow(overlay) {
+  console.log("Removing previous arrow");
+  const previousArrow = overlay.querySelector("#previous-arrow");
+  if (previousArrow) {
+    previousArrow.parentNode.removeChild(previousArrow);
+  }
+}
+
 function populateOverlay(request, overlay) {
-  for (let i = 0; i < request.data.length && i < ITEMS_PER_OVERLAY_PAGE; i++) {
+  for (
+    let i = startIndex;
+    i < request.data.length && i < startIndex + ITEMS_PER_OVERLAY_PAGE;
+    i++
+  ) {
     const listing = request.data[i];
 
     // Container div for the listing
@@ -193,4 +279,13 @@ function populateOverlay(request, overlay) {
 
   // Then append the overlay to the body
   document.body.appendChild(overlay);
+}
+
+function clearOverlay(overlay) {
+  if (overlay) {
+    const childDivs = overlay.getElementsByTagName("div");
+    Array.from(childDivs).forEach((childDiv) => {
+      childDiv.parentNode.removeChild(childDiv);
+    });
+  }
 }
