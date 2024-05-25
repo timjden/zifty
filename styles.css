@@ -1,0 +1,109 @@
+#zifty-overlay {
+  position: fixed;
+  bottom: 1%;
+  left: 0;
+  right: 0;
+  width: 75%;
+  height: 20%;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid black;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  margin: auto;
+}
+
+.close-button,
+.arrow {
+  position: absolute;
+  color: white;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+
+.close-button {
+  top: 0%;
+  right: 0.2%;
+}
+
+#next-arrow {
+  top: 50%;
+  right: 0.2%;
+}
+
+#previous-arrow {
+  top: 50%;
+  left: 0.2%;
+}
+
+.listing {
+  display: inline-block;
+  margin: 1.5rem;
+  width: calc(29% - 2%); /* Adjusting width to accommodate margin */
+  height: 95%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid white;
+  position: relative;
+}
+
+.listing a {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.listing img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: auto;
+}
+
+.listing-details {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 33%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 1%;
+  text-align: center;
+  font-size: 1rem;
+  color: white;
+  padding: 2%;
+}
+
+.listing-title {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listing-price {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: auto;
+}
+
+.listing-location {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrow:hover,
+.close-button:hover {
+  color: #ccc;
+}
