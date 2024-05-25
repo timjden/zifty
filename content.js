@@ -7,27 +7,9 @@ let startIndex = 0;
 function createOverlay() {
   const overlay = document.createElement("div");
   overlay.id = "zifty-overlay";
-  overlay.style.position = "fixed";
-  overlay.style.bottom = "1%";
-  overlay.style.left = "0";
-  overlay.style.right = "0";
-  overlay.style.width = "75%";
-  overlay.style.height = "20%";
-  overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-  overlay.style.borderColor = "black";
-  overlay.style.zIndex = "9999";
-  overlay.style.display = "flex";
-  overlay.style.justifyContent = "center";
-  overlay.style.alignItems = "center";
-  overlay.style.color = "white";
-  overlay.style.margin = "auto";
 
   const closeButton = document.createElement("span");
-  closeButton.style.position = "absolute";
-  closeButton.style.top = "5px";
-  closeButton.style.right = "5px";
-  closeButton.style.color = "white";
-  closeButton.style.cursor = "pointer";
+  closeButton.className = "close-button";
   closeButton.textContent = "X";
 
   closeButton.addEventListener("click", () => {
@@ -99,7 +81,7 @@ chrome.runtime.onMessage.addListener((request) => {
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"));
     }
-
+    injectStylesheet();
     const overlay = createOverlay();
 
     // If there are no listings, display a message and return
@@ -121,24 +103,25 @@ chrome.runtime.onMessage.addListener((request) => {
   }
 });
 
+function injectStylesheet() {
+  const cssLink = document.createElement("link");
+  cssLink.href = chrome.runtime.getURL("styles.css");
+  cssLink.type = "text/css";
+  cssLink.rel = "stylesheet";
+  document.head.appendChild(cssLink);
+}
+
 function createNextArrow(request, overlay) {
   const nextArrow = document.createElement("span");
   nextArrow.id = "next-arrow";
-  nextArrow.style.position = "absolute";
-  nextArrow.style.top = "50%";
-  nextArrow.style.right = "5px";
-  nextArrow.style.fontSize = "1.5rem";
+  nextArrow.className = "arrow";
   nextArrow.textContent = ">";
-  nextArrow.style.cursor = "pointer";
+
   overlay.appendChild(nextArrow);
 
   nextArrow.addEventListener("click", function () {
     pageNumber += 1;
     startIndex = pageNumber * ITEMS_PER_OVERLAY_PAGE;
-
-    console.log(`Start Index: ${startIndex}`);
-    console.log(`Page Number: ${pageNumber}`);
-    console.log(`Items per Page: ${ITEMS_PER_OVERLAY_PAGE}`);
 
     // Don't go to the next page if there are no more listings
     if (startIndex > request.data.length) {
@@ -147,7 +130,7 @@ function createNextArrow(request, overlay) {
       return;
     }
 
-    // Remove the next arrow if there on the last page
+    // Remove the next arrow if on the last page
     if (startIndex + ITEMS_PER_OVERLAY_PAGE >= request.data.length) {
       removeNextArrow(overlay);
     }
@@ -173,21 +156,14 @@ function removeNextArrow(overlay) {
 function createPreviousArrow(request, overlay) {
   const previousArrow = document.createElement("span");
   previousArrow.id = "previous-arrow";
-  previousArrow.style.position = "absolute";
-  previousArrow.style.top = "50%";
-  previousArrow.style.left = "5px";
-  previousArrow.style.fontSize = "1.5rem";
+  previousArrow.className = "arrow";
   previousArrow.textContent = "<";
-  previousArrow.style.cursor = "pointer";
+
   overlay.appendChild(previousArrow);
 
   previousArrow.addEventListener("click", function () {
     pageNumber -= 1;
     startIndex = pageNumber * ITEMS_PER_OVERLAY_PAGE;
-
-    console.log(`Start Index: ${startIndex}`);
-    console.log(`Page Number: ${pageNumber}`);
-    console.log(`Items per Page: ${ITEMS_PER_OVERLAY_PAGE}`);
 
     if (pageNumber === 0) {
       removePreviousArrow(overlay);
@@ -225,50 +201,25 @@ function populateOverlay(request, overlay) {
 
     // Container div for the listing
     const listingDiv = document.createElement("div");
-    listingDiv.style.display = "inline-block";
-    listingDiv.style.margin = "1%";
-    listingDiv.style.width = "calc(30% - 1%)";
-    listingDiv.style.height = "95%"; // Explicit height for each listing div
-    listingDiv.style.verticalAlign = "center";
-    listingDiv.style.boxSizing = "border-box";
-    listingDiv.style.overflow = "hidden"; // This will clip off any overflowing parts
-    listingDiv.style.border = "1px solid white";
-    listingDiv.style.position = "relative";
+    listingDiv.className = "listing";
 
     // Link element
     const linkElement = document.createElement("a");
     linkElement.href = listing.link; // Set the href to the listing's link
     linkElement.target = "_blank"; // Open link in a new tab
-    linkElement.style.width = "100%";
-    linkElement.style.height = "100%";
-    linkElement.style.display = "block"; // Make sure it takes up the whole div
 
     // Image element
     const img = document.createElement("img");
     img.src = listing.imageSrc;
-    img.style.maxHeight = "100%"; // Reduce max height to allow text space at the bottom
-    img.style.maxWidth = "100%";
-    img.style.objectFit = "contain";
-    img.style.display = "block";
-    img.style.margin = "auto";
 
     // Span element for the title, to overlay on the image
-    const titleSpan = document.createElement("span");
-    titleSpan.textContent = `${listing.title}\n${listing.location}\n${listing.price}`;
-    titleSpan.style.position = "absolute";
-    titleSpan.style.bottom = "0%"; // Adjusted position to leave more space for location and price
-    titleSpan.style.left = "0";
-    titleSpan.style.width = "100%";
-    titleSpan.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-    titleSpan.style.color = "white";
-    titleSpan.style.padding = "1%"; // Increased padding for better separation
-    titleSpan.style.textAlign = "center";
-    titleSpan.style.fontSize = "1rem";
-    titleSpan.style.whiteSpace = "pre-line"; // Adjust font size if necessary
+    const listingDescription = document.createElement("span");
+    listingDescription.textContent = `${listing.title}\n${listing.location}\n${listing.price}`;
+    listingDescription.className = "listing-description";
 
     // Append the image and spans to the link element
     linkElement.appendChild(img);
-    linkElement.appendChild(titleSpan);
+    linkElement.appendChild(listingDescription);
 
     // Append the link element to the listing div
     listingDiv.appendChild(linkElement);
