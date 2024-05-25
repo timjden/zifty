@@ -213,13 +213,28 @@ function populateOverlay(request, overlay) {
     img.src = listing.imageSrc;
 
     // Span element for the title, to overlay on the image
+    const listingDetails = document.createElement("div");
+    listingDetails.className = "listing-details";
+
     const listingDescription = document.createElement("span");
-    listingDescription.textContent = `${listing.title}\n${listing.location}\n${listing.price}`;
-    listingDescription.className = "listing-description";
+    listingDescription.textContent = listing.title;
+    listingDescription.className = "listing-title";
+
+    const listingPrice = document.createElement("span");
+    listingPrice.textContent = listing.price;
+    listingPrice.className = "listing-price";
+
+    const listingLocation = document.createElement("span");
+    listingLocation.textContent = listing.location;
+    listingLocation.className = "listing-location";
+
+    listingDetails.appendChild(listingDescription);
+    listingDetails.appendChild(listingLocation);
+    listingDetails.appendChild(listingPrice);
 
     // Append the image and spans to the link element
     linkElement.appendChild(img);
-    linkElement.appendChild(listingDescription);
+    linkElement.appendChild(listingDetails);
 
     // Append the link element to the listing div
     listingDiv.appendChild(linkElement);
