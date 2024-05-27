@@ -261,3 +261,5 @@ function clearOverlay(overlay) {
     });
   }
 }
+
+export { getQuery };
