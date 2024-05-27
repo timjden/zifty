@@ -2,35 +2,35 @@
 const chrome = {
   runtime: {
     lastError: null,
-    connect: jest.fn(),
-    sendMessage: jest.fn(),
+    connect: () => {},
+    sendMessage: () => {},
     onMessage: {
-      addListener: jest.fn(),
+      addListener: () => {},
     },
   },
   storage: {
     local: {
-      get: jest.fn((key, callback) => {
+      get: (key, callback) => {
         callback({ [key]: "value" });
-      }),
-      set: jest.fn(),
-      remove: jest.fn(),
-      clear: jest.fn(),
+      },
+      set: () => {},
+      remove: () => {},
+      clear: () => {},
     },
     sync: {
-      get: jest.fn(),
-      set: jest.fn(),
-      remove: jest.fn(),
-      clear: jest.fn(),
+      get: () => {},
+      set: () => {},
+      remove: () => {},
+      clear: () => {},
     },
   },
   tabs: {
-    query: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    executeScript: jest.fn(),
+    query: () => {},
+    create: () => {},
+    update: () => {},
+    executeScript: () => {},
     onUpdated: {
-      addListener: jest.fn(),
+      addListener: () => {},
     },
   },
   // Add other APIs as needed
