@@ -1,6 +1,7 @@
+const URL = window.location.href;
 const QUERY_PARAM_NAME = "qsearch";
-const LOCATION_XPATH = null;
 const ITEMS_PER_OVERLAY_PAGE = 6;
+
 let pageNumber = 0;
 let startIndex = 0;
 
@@ -21,8 +22,7 @@ function createOverlay() {
   return overlay;
 }
 
-function getQuery(queryParamName) {
-  const url = window.location.href;
+function getQuery(url, queryParamName) {
   const urlObj = new URL(url);
   const queryParams = new URLSearchParams(urlObj.search);
   return queryParams.get(queryParamName);
@@ -33,7 +33,7 @@ function getDetails(queryParamName) {
     query: null,
   };
 
-  const query = getQuery(queryParamName);
+  const query = getQuery(URL, queryParamName);
   if (query === null) {
     console.log(`Could not find query ${queryParamName} in URL`);
     details.query = null;
@@ -255,3 +255,5 @@ function clearOverlay(overlay) {
     });
   }
 }
+
+export { getQuery };
