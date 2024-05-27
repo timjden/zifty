@@ -1,7 +1,8 @@
+import test from "ava";
 import "../mocks/chrome.js";
 import { fetchFromFacebookMarketplace } from "../background.js";
 
-test("request to fb marketplace with cape town location and query 'bicycle' returns results", async () => {
+test("request to fb marketplace with cape town location and query 'bicycle' returns results", async (t) => {
   const listings = await fetchFromFacebookMarketplace(
     "bicycle",
     {
@@ -10,12 +11,12 @@ test("request to fb marketplace with cape town location and query 'bicycle' retu
     },
     30
   );
-  console.log(listings);
-  expect(Array.isArray(listings)).toBe(true);
-  expect(listings.length).toBeGreaterThan(0);
+
+  t.true(Array.isArray(listings));
+  t.true(listings.length > 0);
 });
 
-test("request to fb marketplace with hoofdorp location and query 'fiets' returns results", async () => {
+test("request to fb marketplace with hoofdorp location and query 'fiets' returns results", async (t) => {
   const listings = await fetchFromFacebookMarketplace(
     "fiets",
     {
@@ -24,7 +25,7 @@ test("request to fb marketplace with hoofdorp location and query 'fiets' returns
     },
     30
   );
-  console.log(listings);
-  expect(Array.isArray(listings)).toBe(true);
-  expect(listings.length).toBeGreaterThan(0);
+
+  t.true(Array.isArray(listings));
+  t.true(listings.length > 0);
 });
