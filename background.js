@@ -34,7 +34,6 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
 });
 
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
-  console.log("Fetching from Facebook Marketplace...");
   try {
     const url = "https://www.facebook.com/api/graphql/";
 
