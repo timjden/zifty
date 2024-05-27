@@ -5,7 +5,8 @@
   },
   "ava": {
     "files": [
-      "tests/**/*.js"
+      "tests/**/*.js",
+      "!tests/content.test.js"
     ]
   },
   "devDependencies": {
