@@ -1,11 +1,14 @@
 {
-  "devDependencies": {
-    "@babel/core": "^7.24.5",
-    "@babel/preset-env": "^7.24.5",
-    "babel-jest": "^29.7.0",
-    "jest": "^29.7.0"
-  },
+  "type": "module",
   "scripts": {
-    "test": "jest"
+    "test": "ava"
+  },
+  "ava": {
+    "files": [
+      "tests/**/*.js"
+    ]
+  },
+  "devDependencies": {
+    "ava": "^6.1.3"
   }
 }
