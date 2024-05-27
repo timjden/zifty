@@ -1,4 +1,4 @@
-const URL = window.location.href;
+const PAGE_URL = window.location.href;
 const QUERY_PARAM_NAME = "qsearch";
 const ITEMS_PER_OVERLAY_PAGE = 6;
 
@@ -28,12 +28,12 @@ function getQuery(url, queryParamName) {
   return queryParams.get(queryParamName);
 }
 
-function getDetails(queryParamName) {
+function getDetails(url, queryParamName) {
   let details = {
     query: null,
   };
 
-  const query = getQuery(URL, queryParamName);
+  const query = getQuery(url, queryParamName);
   if (query === null) {
     console.log(`Could not find query ${queryParamName} in URL`);
     details.query = null;
@@ -46,7 +46,13 @@ function getDetails(queryParamName) {
 
 async function onPageLoad() {
   // When a page loads, get the search details
-  const searchDetails = getDetails(QUERY_PARAM_NAME);
+  let searchDetails = {};
+  if (PAGE_URL.includes("takealot.com")) {
+    searchDetails = getDetails(PAGE_URL, "qsearch");
+  }
+  if (PAGE_URL.includes("amazon.co.za")) {
+    searchDetails = getDetails(PAGE_URL, "k");
+  }
   console.log(searchDetails);
   return searchDetails;
 }
@@ -255,5 +261,3 @@ function clearOverlay(overlay) {
     });
   }
 }
-
-export { getQuery };
