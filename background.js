@@ -1,5 +1,7 @@
 import { logLocation } from "./geolocation.js";
 
+console.log("Zifty background script is running.");
+
 // Send a message to content.ts if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   if (tab.url && tab.status === "complete" && tab.active) {
