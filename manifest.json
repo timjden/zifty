@@ -14,7 +14,8 @@
       "matches": [
         "https://www.takealot.com/all?*",
         "https://www.amazon.co.za/s?*",
-        "https://www.temu.com/search_result.html?*"
+        "https://www.temu.com/search_result.html?*",
+        "https://www.loot.co.za/search?*"
       ],
       "js": ["content.js"]
     }
@@ -23,6 +24,7 @@
     "https://www.takealot.com/all?*",
     "https://www.amazon.co.za/s?*",
     "https://www.temu.com/search_result.html?*",
+    "https://www.loot.co.za/search?*",
     "https://www.facebook.com/api/graphql/"
   ],
   "icons": {
@@ -38,7 +40,8 @@
       "matches": [
         "https://www.takealot.com/*",
         "https://www.amazon.co.za/*",
-        "https://www.temu.com/*"
+        "https://www.temu.com/*",
+        "https://www.loot.co.za/*"
       ]
     }
   ]

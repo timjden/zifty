@@ -71,6 +71,9 @@ async function onPageLoad() {
   if (window.location.href.includes("temu.com")) {
     searchDetails = getDetails(window.location.href, "search_key");
   }
+  if (window.location.href.includes("loot.co.za")) {
+    searchDetails = getDetails(window.location.href, "terms");
+  }
 
   console.log(searchDetails);
   return searchDetails;
