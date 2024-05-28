@@ -111,7 +111,9 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
           imageSrc: edge.node.listing.primary_listing_photo.image.uri,
           link: `https://www.facebook.com/marketplace/item/${edge.node.listing.id}`,
           title: edge.node.listing.marketplace_listing_title,
-          price: edge.node.listing.listing_price.formatted_amount,
+          price: convertCurrencyCode(
+            edge.node.listing.listing_price.formatted_amount
+          ),
           location: edge.node.listing.location.reverse_geocode.city,
         };
       });
@@ -121,6 +123,16 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   } catch (error) {
     console.error("Error fetching from Marketplace:", error);
   }
+}
+
+function convertCurrencyCode(price) {
+  let formattedPrice = price;
+
+  if (price.includes("ZAR")) {
+    formattedPrice = price.replace("ZAR", "R ");
+  }
+
+  return formattedPrice;
 }
 
 // Geolocation stuff
