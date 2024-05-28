@@ -106,7 +106,7 @@
 .listing-location {
   width: 100%;
   height: 33%;
-  min-height: 20px;
+  min-height: 21px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
