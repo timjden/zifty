@@ -9,15 +9,27 @@ function createOverlay() {
   const overlay = document.createElement("div");
   overlay.id = "zifty-overlay";
 
+  const leftButtonContainer = document.createElement("div");
+  leftButtonContainer.className = "left-button-container";
+
+  const listingsContainer = document.createElement("div");
+  listingsContainer.className = "listings-container";
+
+  const rightButtonContainer = document.createElement("div");
+  rightButtonContainer.className = "right-button-container";
+
   const closeButton = document.createElement("span");
   closeButton.className = "close-button";
-  closeButton.textContent = "X";
+  closeButton.textContent = "\u2715";
+  rightButtonContainer.appendChild(closeButton);
 
   closeButton.addEventListener("click", () => {
     document.body.removeChild(overlay);
   });
 
-  overlay.appendChild(closeButton);
+  overlay.appendChild(leftButtonContainer);
+  overlay.appendChild(listingsContainer);
+  overlay.appendChild(rightButtonContainer);
 
   return overlay;
 }
@@ -89,12 +101,13 @@ chrome.runtime.onMessage.addListener((request) => {
     }
     injectStylesheet();
     const overlay = createOverlay();
+    const listingsContainer = overlay.querySelector(".listings-container");
 
     // If there are no listings, display a message and return
     if (request.data.length === 0) {
       const noListings = document.createElement("span");
       noListings.textContent = "No listings found.";
-      overlay.appendChild(noListings);
+      listingsContainer.appendChild(noListings);
       document.body.appendChild(overlay);
       return;
     }
@@ -121,7 +134,7 @@ function createNextArrow(request, overlay) {
   const nextArrow = document.createElement("span");
   nextArrow.id = "next-arrow";
   nextArrow.className = "arrow";
-  nextArrow.textContent = ">";
+  nextArrow.textContent = "\u276F";
 
   overlay.appendChild(nextArrow);
 
@@ -163,7 +176,7 @@ function createPreviousArrow(request, overlay) {
   const previousArrow = document.createElement("span");
   previousArrow.id = "previous-arrow";
   previousArrow.className = "arrow";
-  previousArrow.textContent = "<";
+  previousArrow.textContent = "\u276E";
 
   overlay.appendChild(previousArrow);
 
@@ -214,8 +227,13 @@ function populateOverlay(request, overlay) {
     linkElement.href = listing.link; // Set the href to the listing's link
     linkElement.target = "_blank"; // Open link in a new tab
 
-    // Image element
+    // Image container
+    const imgContainer = document.createElement("div");
+    imgContainer.className = "img-container";
+
+    // Image
     const img = document.createElement("img");
+    imgContainer.appendChild(img);
     img.src = listing.imageSrc;
 
     // Span element for the title, to overlay on the image
@@ -239,14 +257,16 @@ function populateOverlay(request, overlay) {
     listingDetails.appendChild(listingPrice);
 
     // Append the image and spans to the link element
-    linkElement.appendChild(img);
-    linkElement.appendChild(listingDetails);
+    linkElement.appendChild(imgContainer);
+    imgContainer.appendChild(listingDetails);
 
     // Append the link element to the listing div
     listingDiv.appendChild(linkElement);
 
-    // Append the div to the overlay
-    overlay.appendChild(listingDiv);
+    // Append the div to the listings container in the overlay
+    const listingsContainer = overlay.querySelector(".listings-container");
+
+    listingsContainer.appendChild(listingDiv);
   }
 
   // Then append the overlay to the body
@@ -254,8 +274,10 @@ function populateOverlay(request, overlay) {
 }
 
 function clearOverlay(overlay) {
-  if (overlay) {
-    const childDivs = overlay.getElementsByTagName("div");
+  const listingsContainer = overlay.querySelector(".listings-container");
+
+  if (listingsContainer) {
+    const childDivs = listingsContainer.getElementsByTagName("div");
     Array.from(childDivs).forEach((childDiv) => {
       childDiv.parentNode.removeChild(childDiv);
     });

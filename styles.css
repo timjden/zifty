@@ -1,18 +1,33 @@
 #zifty-overlay {
   position: fixed;
-  bottom: 1%;
+  bottom: 1vh; /* Scaled with viewport height */
   left: 0;
   right: 0;
-  width: 75%;
-  height: 20%;
+  width: 75vw; /* Relative to viewport width */
+  height: 20vh; /* Relative to viewport height */
   background-color: rgba(0, 0, 0, 0.5);
   border: 1px solid black;
   z-index: 9999;
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: auto;
+}
+
+.left-button-container,
+.right-button-container {
+  width: 2vw; /* Scaled with viewport width */
+  height: 100%; /* Full height of the parent */
+  border: 1px solid blue; /* Use brown for right-button-container */
+}
+
+.listings-container {
+  width: 71vw;
+  height: 100%; /* Full height of the parent */
+  border: 1px solid yellow;
+  display: flex;
   justify-content: center;
   align-items: center;
-  color: white;
-  margin: auto;
 }
 
 .close-button,
@@ -20,47 +35,48 @@
   position: absolute;
   color: white;
   cursor: pointer;
-  font-size: 1.5rem;
+  font-size: 1.5vw; /* Dynamic text size based on viewport width */
+  border: 1px solid red;
 }
 
 .close-button {
-  top: 0%;
-  right: 0.2%;
+  top: 0;
+  right: 0.2vw; /* Relative to viewport width */
+  font-weight: bold;
 }
 
-#next-arrow {
-  top: 50%;
-  right: 0.2%;
-}
-
+#next-arrow,
 #previous-arrow {
-  top: 50%;
-  left: 0.2%;
+  top: 50%; /* Center vertically */
+  right: 0.2vw; /* For #next-arrow, left for #previous-arrow */
 }
 
 .listing {
-  display: inline-block;
-  margin: 1.5rem;
-  width: calc(29% - 2%); /* Adjusting width to accommodate margin */
-  height: 95%;
-  box-sizing: border-box;
-  overflow: hidden;
+  height: 98%; /* Full use of parent's height */
+  width: 27vw; /* Width relative to viewport */
   border: 1px solid white;
-  position: relative;
+  margin: 0.2vw; /* Margin scaled with viewport */
 }
 
 .listing a {
-  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   height: 100%;
-  display: block;
+  width: 100%;
 }
 
-.listing img {
+.img-container {
+  display: flex;
+  justify-content: center;
+  border: 1px solid red;
+  height: 100%; /* Proportion of parent */
+  width: 100%; /* Proportion of parent */
+  position: relative;
+}
+
+.img-container img {
   max-height: 100%;
-  max-width: 100%;
-  object-fit: contain;
-  display: block;
-  margin: auto;
 }
 
 .listing-details {
@@ -70,37 +86,22 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 33%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  height: 33%; /* Proportional division of parent */
   background-color: rgba(0, 0, 0, 0.5);
-  padding: 1%;
-  text-align: center;
-  font-size: 1rem;
-  color: white;
-  padding: 2%;
+  border: 1px solid green;
 }
 
-.listing-title {
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.listing-price {
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: auto;
-}
-
+.listing-title,
+.listing-price,
 .listing-location {
   width: 100%;
+  height: 33%; /* Equal parts */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  border: 1px solid pink;
+  font-size: 0.7vw;
+  color: white;
 }
 
 .arrow:hover,
