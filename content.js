@@ -136,7 +136,8 @@ function createNextArrow(request, overlay) {
   nextArrow.className = "arrow";
   nextArrow.textContent = "\u276F";
 
-  overlay.appendChild(nextArrow);
+  const rightButtonContainer = overlay.querySelector(".right-button-container");
+  rightButtonContainer.appendChild(nextArrow);
 
   nextArrow.addEventListener("click", function () {
     pageNumber += 1;
@@ -178,7 +179,8 @@ function createPreviousArrow(request, overlay) {
   previousArrow.className = "arrow";
   previousArrow.textContent = "\u276E";
 
-  overlay.appendChild(previousArrow);
+  const leftButtonContainer = overlay.querySelector(".left-button-container");
+  leftButtonContainer.appendChild(previousArrow);
 
   previousArrow.addEventListener("click", function () {
     pageNumber -= 1;
