@@ -1,9 +1,9 @@
-const PAGE_URL = window.location.href;
-const QUERY_PARAM_NAME = "qsearch";
 const ITEMS_PER_OVERLAY_PAGE = 6;
 
 let pageNumber = 0;
 let startIndex = 0;
+
+console.log("Zifty has injected a content script into this page.");
 
 function createOverlay() {
   const overlay = document.createElement("div");
@@ -59,12 +59,19 @@ function getDetails(url, queryParamName) {
 async function onPageLoad() {
   // When a page loads, get the search details
   let searchDetails = {};
-  if (PAGE_URL.includes("takealot.com")) {
-    searchDetails = getDetails(PAGE_URL, "qsearch");
+
+  console.log("Zifty is looking for second-hand listings on this page.");
+
+  if (window.location.href.includes("takealot.com")) {
+    searchDetails = getDetails(window.location.href, "qsearch");
   }
-  if (PAGE_URL.includes("amazon.co.za")) {
-    searchDetails = getDetails(PAGE_URL, "k");
+  if (window.location.href.includes("amazon.co.za")) {
+    searchDetails = getDetails(window.location.href, "k");
   }
+  if (window.location.href.includes("temu.com")) {
+    searchDetails = getDetails(window.location.href, "search_key");
+  }
+
   console.log(searchDetails);
   return searchDetails;
 }
