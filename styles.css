@@ -1,12 +1,13 @@
 #zifty-overlay {
   position: fixed;
-  bottom: 1vh; /* Scaled with viewport height */
+  bottom: 1%;
   left: 0;
   right: 0;
-  width: 75vw; /* Relative to viewport width */
-  height: 20vh; /* Relative to viewport height */
-  background-color: rgba(0, 0, 0, 0.5);
-  border: 1px solid black;
+  width: 75%;
+  height: 20%;
+  background-color: rgba(0, 0, 0, 0.8);
+  border: 2px solid black;
+  border-radius: 10px;
   z-index: 9999;
   display: flex;
   justify-content: space-between;
@@ -16,15 +17,20 @@
 
 .left-button-container,
 .right-button-container {
-  width: 2vw; /* Scaled with viewport width */
-  height: 100%; /* Full height of the parent */
-  border: 1px solid blue; /* Use brown for right-button-container */
+  width: 2%;
+  height: 100%;
+  /* border: 1px solid blue; */
+  min-width: 25px;
+}
+
+.right-button-container {
+  /* border: 1px solid pink; */
 }
 
 .listings-container {
-  width: 71vw;
-  height: 100%; /* Full height of the parent */
-  border: 1px solid yellow;
+  width: 96%;
+  height: 100%;
+  /* border: 1px solid yellow; */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -35,27 +41,30 @@
   position: absolute;
   color: white;
   cursor: pointer;
-  font-size: 1.5vw; /* Dynamic text size based on viewport width */
-  border: 1px solid red;
+  font-size: 25px;
+  /* border: 1px solid red; */
 }
 
 .close-button {
   top: 0;
-  right: 0.2vw; /* Relative to viewport width */
+  right: 0.2%;
   font-weight: bold;
 }
 
-#next-arrow,
+#next-arrow {
+  top: 50%;
+  right: 0.2%;
+}
 #previous-arrow {
-  top: 50%; /* Center vertically */
-  right: 0.2vw; /* For #next-arrow, left for #previous-arrow */
+  top: 50%;
+  left: 0.2%;
 }
 
 .listing {
-  height: 98%; /* Full use of parent's height */
-  width: 27vw; /* Width relative to viewport */
+  height: 98%;
+  width: 27%;
   border: 1px solid white;
-  margin: 0.2vw; /* Margin scaled with viewport */
+  margin: 0.2%;
 }
 
 .listing a {
@@ -69,9 +78,9 @@
 .img-container {
   display: flex;
   justify-content: center;
-  border: 1px solid red;
-  height: 100%; /* Proportion of parent */
-  width: 100%; /* Proportion of parent */
+  /* border: 1px solid red; */
+  height: 100%;
+  width: 100%;
   position: relative;
 }
 
@@ -86,22 +95,28 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 33%; /* Proportional division of parent */
+  height: 33%;
+  min-height: 60px;
   background-color: rgba(0, 0, 0, 0.5);
-  border: 1px solid green;
+  /* border: 1px solid green; */
 }
 
 .listing-title,
 .listing-price,
 .listing-location {
   width: 100%;
-  height: 33%; /* Equal parts */
+  height: 33%;
+  min-height: 20px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border: 1px solid pink;
-  font-size: 0.7vw;
+  /* border: 1px solid pink; */
+  font-size: 13px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
   color: white;
+  padding: 4px;
+  text-align: center;
 }
 
 .arrow:hover,
