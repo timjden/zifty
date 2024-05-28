@@ -16,24 +16,43 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 chrome.runtime.onMessage.addListener(async (request, sender) => {
   if (request.type === "searchDetails") {
     console.log("Received result:", request.data);
-    const location = await logLocation();
-    console.log("Location:", location);
-    const fbListings = await fetchFromFacebookMarketplace(
-      request.data.query,
-      {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      },
-      8 // radius
-    );
-    console.log("Number of listings:", fbListings.length);
-    chrome.tabs.sendMessage(sender.tab.id, {
-      message: "Listings",
-      data: fbListings,
-    });
+    await getListings(request.data, sender.tab.id);
   }
   return true;
 });
+
+// Listen for specified requests
+chrome.webRequest.onBeforeRequest.addListener(
+  async function (details) {
+    console.log("Matching URL");
+    const url = new URL(details.url);
+    const searchstr = url.searchParams.get("searchstr");
+    if (searchstr) {
+      console.log("Search String:", searchstr);
+      await getListings({ query: searchstr }, details.tabId);
+    }
+  },
+  { urls: ["https://www.yuppiechef.com/search.htm*"] }
+);
+
+async function getListings(queryObject, tabId) {
+  const location = await logLocation();
+  console.log("Location:", location);
+  const fbListings = await fetchFromFacebookMarketplace(
+    queryObject.query,
+    {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    },
+    8 // radius
+  );
+  console.log(fbListings);
+  console.log("Number of listings:", fbListings.length);
+  chrome.tabs.sendMessage(tabId, {
+    message: "Listings",
+    data: fbListings,
+  });
+}
 
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   try {

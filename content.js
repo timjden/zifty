@@ -57,6 +57,11 @@ function getDetails(url, queryParamName) {
 }
 
 async function onPageLoad() {
+  // When a page loads, if local storage has data then return
+  if (localStorage.getItem("listings")) {
+    return { query: "use_local_storage" };
+  }
+
   // When a page loads, get the search details
   let searchDetails = {};
 
@@ -64,15 +69,14 @@ async function onPageLoad() {
 
   if (window.location.href.includes("takealot.com")) {
     searchDetails = getDetails(window.location.href, "qsearch");
-  }
-  if (window.location.href.includes("amazon.co.za")) {
+  } else if (window.location.href.includes("amazon.co.za")) {
     searchDetails = getDetails(window.location.href, "k");
-  }
-  if (window.location.href.includes("temu.com")) {
+  } else if (window.location.href.includes("temu.com")) {
     searchDetails = getDetails(window.location.href, "search_key");
-  }
-  if (window.location.href.includes("loot.co.za")) {
+  } else if (window.location.href.includes("loot.co.za")) {
     searchDetails = getDetails(window.location.href, "terms");
+  } else {
+    return { query: null };
   }
 
   console.log(searchDetails);
@@ -87,9 +91,16 @@ function containsNullValues(result) {
 window.addEventListener("load", async () => {
   let intervalId = setInterval(async () => {
     let result = await onPageLoad();
+    if (result.query === "use_local_storage") {
+      clearInterval(intervalId);
+      return;
+    }
     if (!containsNullValues(result)) {
       clearInterval(intervalId);
       chrome.runtime.sendMessage({ type: "searchDetails", data: result });
+    }
+    if (result.query === null) {
+      clearInterval(intervalId);
     }
   }, 1000);
 });
@@ -103,8 +114,17 @@ chrome.runtime.onMessage.addListener((request) => {
         clearInterval(intervalId);
         chrome.runtime.sendMessage({ type: "searchDetails", data: result });
       }
+      if (result.query === null) {
+        clearInterval(intervalId);
+      }
     }, 1000);
   } else if (request.message === "Listings") {
+    console.log("Received listings from background.");
+    console.log(request.data);
+
+    // Pass listings to local storage
+    localStorage.setItem("listings", JSON.stringify(request.data));
+
     // When the listings are received from background, create the overlay
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"));

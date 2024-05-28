@@ -4,7 +4,7 @@
   "description": "Secondhand alternatives to firsthand products!",
   "author": "Zifty",
   "manifest_version": 3,
-  "permissions": ["offscreen", "geolocation"],
+  "permissions": ["offscreen", "geolocation", "webRequest"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -15,7 +15,8 @@
         "https://www.takealot.com/all?*",
         "https://www.amazon.co.za/s?*",
         "https://www.temu.com/search_result.html?*",
-        "https://www.loot.co.za/search?*"
+        "https://www.loot.co.za/search?*",
+        "https://www.yuppiechef.com/*"
       ],
       "js": ["content.js"]
     }
@@ -25,7 +26,8 @@
     "https://www.amazon.co.za/s?*",
     "https://www.temu.com/search_result.html?*",
     "https://www.loot.co.za/search?*",
-    "https://www.facebook.com/api/graphql/"
+    "https://www.facebook.com/api/graphql/",
+    "https://www.yuppiechef.com/*"
   ],
   "icons": {
     "16": "assets/icon16.png",
@@ -41,7 +43,8 @@
         "https://www.takealot.com/*",
         "https://www.amazon.co.za/*",
         "https://www.temu.com/*",
-        "https://www.loot.co.za/*"
+        "https://www.loot.co.za/*",
+        "https://www.yuppiechef.com/*"
       ]
     }
   ]
