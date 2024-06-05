@@ -1,7 +1,7 @@
 const ITEMS_PER_OVERLAY_PAGE = 6;
 
 let pageNumber = 0;
-let startIndex = 0;
+let currentIndex = 0;
 
 console.log("Zifty has injected a content script into this page.");
 
@@ -14,6 +14,9 @@ function createOverlay() {
 
   const listingsContainer = document.createElement("div");
   listingsContainer.className = "listings-container";
+
+  const listingsSlider = document.createElement("div");
+  listingsSlider.className = "listings-slider";
 
   const rightButtonContainer = document.createElement("div");
   rightButtonContainer.className = "right-button-container";
@@ -29,6 +32,7 @@ function createOverlay() {
 
   overlay.appendChild(leftButtonContainer);
   overlay.appendChild(listingsContainer);
+  listingsContainer.appendChild(listingsSlider);
   overlay.appendChild(rightButtonContainer);
 
   return overlay;
@@ -111,13 +115,13 @@ chrome.runtime.onMessage.addListener((request) => {
     }
     injectStylesheet();
     const overlay = createOverlay();
-    const listingsContainer = overlay.querySelector(".listings-container");
+    const listingsSlider = overlay.querySelector(".listings-slider");
 
     // If there are no listings, display a message and return
     if (request.data.length === 0) {
       const noListings = document.createElement("span");
       noListings.textContent = "No listings found.";
-      listingsContainer.appendChild(noListings);
+      listingsSlider.appendChild(noListings);
       document.body.appendChild(overlay);
       return;
     }
@@ -150,28 +154,27 @@ function createNextArrow(request, overlay) {
   rightButtonContainer.appendChild(nextArrow);
 
   nextArrow.addEventListener("click", function () {
-    pageNumber += 1;
-    startIndex = pageNumber * ITEMS_PER_OVERLAY_PAGE;
+    currentIndex += ITEMS_PER_OVERLAY_PAGE;
 
     // Don't go to the next page if there are no more listings
-    if (startIndex > request.data.length) {
-      pageNumber -= 1;
-      startIndex = pageNumber * ITEMS_PER_OVERLAY_PAGE;
+    if (currentIndex >= request.data.length) {
+      currentIndex = 0;
       return;
     }
 
     // Remove the next arrow if on the last page
-    if (startIndex + ITEMS_PER_OVERLAY_PAGE >= request.data.length) {
+    if (currentIndex + ITEMS_PER_OVERLAY_PAGE >= request.data.length) {
       removeNextArrow(overlay);
     }
 
     // Create a previous arrow if page number is greater than 0 and it does not exist already
-    if (pageNumber > 0 && !overlay.querySelector("#previous-arrow")) {
+    if (currentIndex > 0 && !overlay.querySelector("#previous-arrow")) {
       createPreviousArrow(request, overlay);
     }
-
-    clearOverlay(overlay);
-    populateOverlay(request, overlay);
+    const listingsSlider = overlay.querySelector(".listings-slider");
+    listingsSlider.style.transform = `translateX(-${
+      (100 / ITEMS_PER_OVERLAY_PAGE) * currentIndex
+    }%)`;
   });
 }
 
@@ -193,10 +196,9 @@ function createPreviousArrow(request, overlay) {
   leftButtonContainer.appendChild(previousArrow);
 
   previousArrow.addEventListener("click", function () {
-    pageNumber -= 1;
-    startIndex = pageNumber * ITEMS_PER_OVERLAY_PAGE;
+    currentIndex -= ITEMS_PER_OVERLAY_PAGE;
 
-    if (pageNumber === 0) {
+    if (currentIndex === 0) {
       removePreviousArrow(overlay);
     }
 
@@ -206,11 +208,15 @@ function createPreviousArrow(request, overlay) {
       createNextArrow(request, overlay);
     }
 
-    if (pageNumber < 0) {
+    if (currentIndex < 0) {
+      currentIndex = Math.max(request.data.length - ITEMS_PER_OVERLAY_PAGE, 0);
       return;
     }
-    clearOverlay(overlay);
-    populateOverlay(request, overlay);
+
+    const listingsSlider = overlay.querySelector(".listings-slider");
+    listingsSlider.style.transform = `translateX(-${
+      (100 / ITEMS_PER_OVERLAY_PAGE) * currentIndex
+    }%)`;
   });
 }
 
@@ -223,11 +229,7 @@ function removePreviousArrow(overlay) {
 }
 
 function populateOverlay(request, overlay) {
-  for (
-    let i = startIndex;
-    i < request.data.length && i < startIndex + ITEMS_PER_OVERLAY_PAGE;
-    i++
-  ) {
+  for (let i = currentIndex; i < request.data.length; i++) {
     const listing = request.data[i];
 
     // Container div for the listing
@@ -236,8 +238,8 @@ function populateOverlay(request, overlay) {
 
     // Link element
     const linkElement = document.createElement("a");
-    linkElement.href = listing.link; // Set the href to the listing's link
-    linkElement.target = "_blank"; // Open link in a new tab
+    linkElement.href = listing.link;
+    linkElement.target = "_blank";
 
     // Image container
     const imgContainer = document.createElement("div");
@@ -276,24 +278,13 @@ function populateOverlay(request, overlay) {
     listingDiv.appendChild(linkElement);
 
     // Append the div to the listings container in the overlay
-    const listingsContainer = overlay.querySelector(".listings-container");
+    const listingsSlider = overlay.querySelector(".listings-slider");
 
-    listingsContainer.appendChild(listingDiv);
+    listingsSlider.appendChild(listingDiv);
   }
 
   // If the overlay is not attached to the body, then attach it
   if (!document.getElementById("zifty-overlay")) {
     document.body.appendChild(overlay);
-  }
-}
-
-function clearOverlay(overlay) {
-  const listingsContainer = overlay.querySelector(".listings-container");
-
-  if (listingsContainer) {
-    const childDivs = listingsContainer.getElementsByTagName("div");
-    Array.from(childDivs).forEach((childDiv) => {
-      childDiv.parentNode.removeChild(childDiv);
-    });
   }
 }
