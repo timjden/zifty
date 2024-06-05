@@ -14,6 +14,7 @@
   align-items: center;
   margin: auto;
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  animation: popUp 0.5s forwards;
 }
 
 .left-button-container,
@@ -125,4 +126,23 @@
 .arrow:hover,
 .close-button:hover {
   color: #ccc;
+}
+
+@keyframes popUp {
+  from {
+    bottom: -100%;
+  }
+  to {
+    bottom: 1%;
+  }
+}
+
+@keyframes hide {
+  from {
+    bottom: 1%;
+  }
+  to {
+    bottom: -100%;
+    visibility: hidden;
+  }
 }
