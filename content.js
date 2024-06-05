@@ -1,6 +1,5 @@
 const ITEMS_PER_OVERLAY_PAGE = 6;
 
-let pageNumber = 0;
 let currentIndex = 0;
 
 console.log("Zifty has injected a content script into this page.");
@@ -61,6 +60,9 @@ function getDetails(url, queryParamName) {
 }
 
 async function onPageLoad() {
+  // Clear the currentIndex on page load
+  currentIndex = 0;
+
   // When a page loads, get the search details
   let searchDetails = {};
 
@@ -109,6 +111,7 @@ chrome.runtime.onMessage.addListener((request) => {
       }
     }, 1000);
   } else if (request.message === "Listings") {
+    console.log(`Received listings from background: ${request.data.length}`);
     // When the listings are received from background, create the overlay
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"));
