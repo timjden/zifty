@@ -39,10 +39,12 @@
 
 .close-button,
 .arrow {
+  line-height: 1.5;
   position: absolute;
   color: white;
   cursor: pointer;
   font-size: 25px;
+  height: 25%;
   /* border: 1px solid red; */
 }
 
