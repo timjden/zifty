@@ -24,7 +24,7 @@ function createOverlay() {
   rightButtonContainer.appendChild(closeButton);
 
   closeButton.addEventListener("click", () => {
-    document.body.removeChild(overlay);
+    overlay.style.animation = "hide 0.5s forwards";
   });
 
   overlay.appendChild(leftButtonContainer);
@@ -281,8 +281,10 @@ function populateOverlay(request, overlay) {
     listingsContainer.appendChild(listingDiv);
   }
 
-  // Then append the overlay to the body
-  document.body.appendChild(overlay);
+  // If the overlay is not attached to the body, then attach it
+  if (!document.getElementById("zifty-overlay")) {
+    document.body.appendChild(overlay);
+  }
 }
 
 function clearOverlay(overlay) {
