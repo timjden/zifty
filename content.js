@@ -1,6 +1,7 @@
 const ITEMS_PER_OVERLAY_PAGE = 6;
 
 let currentIndex = 0;
+let listingsData;
 
 console.log("Zifty has injected a content script into this page.");
 
@@ -27,6 +28,14 @@ chrome.runtime.onMessage.addListener((request) => {
     }, 1000);
   } else if (request.message === "Listings") {
     console.log(`Received listings from background: ${request.data.length}`);
+
+    // If the listingsData is the same as the previous listingsData, return
+    if (listingsData === request.data) {
+      return;
+    }
+
+    listingsData = request.data;
+
     // When the listings are received from background, create the overlay
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"));
