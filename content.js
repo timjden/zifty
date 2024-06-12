@@ -60,6 +60,7 @@ chrome.runtime.onMessage.addListener((request) => {
 
     // Then populate the overlay with the listings
     populateOverlay(request, overlay);
+    overlay.style.animation = "popUp 0.5s forwards";
   }
 });
 
