@@ -4,6 +4,56 @@ let currentIndex = 0;
 
 console.log("Zifty has injected a content script into this page.");
 
+// When the page loads, get the search details and send these to background
+window.addEventListener("load", async () => {
+  let intervalId = setInterval(async () => {
+    let result = await onPageLoad();
+    if (!containsNullValues(result)) {
+      clearInterval(intervalId);
+      chrome.runtime.sendMessage({ type: "searchDetails", data: result });
+    }
+  }, 1000);
+});
+
+// When background sends a message that the URL changed, get the search details and send these to background
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.message === "URL changed") {
+    let intervalId = setInterval(async () => {
+      let result = await onPageLoad();
+      if (!containsNullValues(result)) {
+        clearInterval(intervalId);
+        chrome.runtime.sendMessage({ type: "searchDetails", data: result });
+      }
+    }, 1000);
+  } else if (request.message === "Listings") {
+    console.log(`Received listings from background: ${request.data.length}`);
+    // When the listings are received from background, create the overlay
+    if (document.getElementById("zifty-overlay")) {
+      document.body.removeChild(document.getElementById("zifty-overlay"));
+    }
+    injectStylesheet();
+    const overlay = createOverlay();
+    const listingsSlider = overlay.querySelector(".listings-slider");
+
+    // If there are no listings, display a message and return
+    if (request.data.length === 0) {
+      const noListings = document.createElement("span");
+      noListings.textContent = "No listings found.";
+      listingsSlider.appendChild(noListings);
+      document.body.appendChild(overlay);
+      return;
+    }
+
+    // Otherwise if there are more than ITEMS_PER_OVERLAY_PAGE listings, create a next arrow
+    if (request.data.length > ITEMS_PER_OVERLAY_PAGE) {
+      createNextArrow(request, overlay);
+    }
+
+    // Then populate the overlay with the listings
+    populateOverlay(request, overlay);
+  }
+});
+
 function createOverlay() {
   const overlay = document.createElement("div");
   overlay.id = "zifty-overlay";
@@ -88,56 +138,6 @@ async function onPageLoad() {
 function containsNullValues(result) {
   return !result || Object.values(result).some((x) => x === null);
 }
-
-// When the page loads, get the search details and send these to background
-window.addEventListener("load", async () => {
-  let intervalId = setInterval(async () => {
-    let result = await onPageLoad();
-    if (!containsNullValues(result)) {
-      clearInterval(intervalId);
-      chrome.runtime.sendMessage({ type: "searchDetails", data: result });
-    }
-  }, 1000);
-});
-
-// When background sends a message that the URL changed, get the search details and send these to background
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.message === "URL changed") {
-    let intervalId = setInterval(async () => {
-      let result = await onPageLoad();
-      if (!containsNullValues(result)) {
-        clearInterval(intervalId);
-        chrome.runtime.sendMessage({ type: "searchDetails", data: result });
-      }
-    }, 1000);
-  } else if (request.message === "Listings") {
-    console.log(`Received listings from background: ${request.data.length}`);
-    // When the listings are received from background, create the overlay
-    if (document.getElementById("zifty-overlay")) {
-      document.body.removeChild(document.getElementById("zifty-overlay"));
-    }
-    injectStylesheet();
-    const overlay = createOverlay();
-    const listingsSlider = overlay.querySelector(".listings-slider");
-
-    // If there are no listings, display a message and return
-    if (request.data.length === 0) {
-      const noListings = document.createElement("span");
-      noListings.textContent = "No listings found.";
-      listingsSlider.appendChild(noListings);
-      document.body.appendChild(overlay);
-      return;
-    }
-
-    // Otherwise if there are more than ITEMS_PER_OVERLAY_PAGE listings, create a next arrow
-    if (request.data.length > ITEMS_PER_OVERLAY_PAGE) {
-      createNextArrow(request, overlay);
-    }
-
-    // Then populate the overlay with the listings
-    populateOverlay(request, overlay);
-  }
-});
 
 function injectStylesheet() {
   const cssLink = document.createElement("link");
