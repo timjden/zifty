@@ -80,12 +80,13 @@ function createOverlay() {
   const rightButtonContainer = document.createElement("div");
   rightButtonContainer.className = "right-button-container";
 
-  const closeButton = document.createElement("span");
-  closeButton.className = "close-button";
-  closeButton.textContent = "\u2715";
-  rightButtonContainer.appendChild(closeButton);
+  const closeButtonContainer = document.createElement("span");
+  closeButtonContainer.className = "close-button-container";
+  const closeButton = createCloseButtonSVG();
+  closeButtonContainer.appendChild(closeButton);
+  rightButtonContainer.appendChild(closeButtonContainer);
 
-  closeButton.addEventListener("click", () => {
+  closeButtonContainer.addEventListener("click", () => {
     overlay.style.animation = "hide 0.5s forwards";
   });
 
@@ -158,15 +159,17 @@ function injectStylesheet() {
 }
 
 function createNextArrow(request, overlay) {
-  const nextArrow = document.createElement("span");
-  nextArrow.id = "next-arrow";
-  nextArrow.className = "arrow";
-  nextArrow.textContent = "\u276F";
+  const nextArrowContainer = document.createElement("span");
+  nextArrowContainer.id = "next-arrow-container";
+  nextArrowContainer.className = "arrow";
+  const nextArrow = createNextArrowSVG();
+  nextArrowContainer.appendChild(nextArrow);
+  // nextArrow.textContent = "\u276F";
 
   const rightButtonContainer = overlay.querySelector(".right-button-container");
-  rightButtonContainer.appendChild(nextArrow);
+  rightButtonContainer.appendChild(nextArrowContainer);
 
-  nextArrow.addEventListener("click", function () {
+  nextArrowContainer.addEventListener("click", function () {
     currentIndex += ITEMS_PER_OVERLAY_PAGE;
 
     // Don't go to the next page if there are no more listings
@@ -181,7 +184,10 @@ function createNextArrow(request, overlay) {
     }
 
     // Create a previous arrow if page number is greater than 0 and it does not exist already
-    if (currentIndex > 0 && !overlay.querySelector("#previous-arrow")) {
+    if (
+      currentIndex > 0 &&
+      !overlay.querySelector("#previous-arrow-container")
+    ) {
       createPreviousArrow(request, overlay);
     }
     const listingsSlider = overlay.querySelector(".listings-slider");
@@ -193,22 +199,30 @@ function createNextArrow(request, overlay) {
 
 function removeNextArrow(overlay) {
   console.log("Removing next arrow");
-  const nextArrow = overlay.querySelector("#next-arrow");
+  const nextArrow = overlay.querySelector("#next-arrow-container");
   if (nextArrow) {
     nextArrow.parentNode.removeChild(nextArrow);
   }
 }
 
 function createPreviousArrow(request, overlay) {
-  const previousArrow = document.createElement("span");
-  previousArrow.id = "previous-arrow";
-  previousArrow.className = "arrow";
-  previousArrow.textContent = "\u276E";
+  // const nextArrowContainer = document.createElement("span");
+  // nextArrowContainer.id = "next-arrow-container";
+  // nextArrowContainer.className = "arrow";
+  // const nextArrow = createNextArrowSVG();
+  // nextArrowContainer.appendChild(nextArrow);
+
+  const previousArrowContainer = document.createElement("span");
+  previousArrowContainer.id = "previous-arrow-container";
+  previousArrowContainer.className = "arrow";
+  const previousArrow = createBackArrowSVG();
+  previousArrowContainer.appendChild(previousArrow);
+  // previousArrow.textContent = "\u276E";
 
   const leftButtonContainer = overlay.querySelector(".left-button-container");
-  leftButtonContainer.appendChild(previousArrow);
+  leftButtonContainer.appendChild(previousArrowContainer);
 
-  previousArrow.addEventListener("click", function () {
+  previousArrowContainer.addEventListener("click", function () {
     currentIndex -= ITEMS_PER_OVERLAY_PAGE;
 
     if (currentIndex === 0) {
@@ -216,7 +230,7 @@ function createPreviousArrow(request, overlay) {
     }
 
     // Next arrow should be created if it doesn't exist
-    const nextArrow = overlay.querySelector("#next-arrow");
+    const nextArrow = overlay.querySelector("#next-arrow-container");
     if (!nextArrow) {
       createNextArrow(request, overlay);
     }
@@ -235,7 +249,7 @@ function createPreviousArrow(request, overlay) {
 
 function removePreviousArrow(overlay) {
   console.log("Removing previous arrow");
-  const previousArrow = overlay.querySelector("#previous-arrow");
+  const previousArrow = overlay.querySelector("#previous-arrow-container");
   if (previousArrow) {
     previousArrow.parentNode.removeChild(previousArrow);
   }
@@ -300,4 +314,97 @@ function populateOverlay(request, overlay) {
   if (!document.getElementById("zifty-overlay")) {
     document.body.appendChild(overlay);
   }
+}
+
+function createCloseButtonSVG() {
+  // Create the SVG element
+  const closeButtonSVG = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg"
+  );
+  closeButtonSVG.setAttribute("class", "zifty-button");
+  closeButtonSVG.setAttribute("width", "20");
+  closeButtonSVG.setAttribute("height", "20");
+  closeButtonSVG.setAttribute("viewBox", "0 0 24 24");
+  closeButtonSVG.setAttribute("fill", "none");
+  closeButtonSVG.setAttribute("stroke", "white");
+  closeButtonSVG.setAttribute("stroke-width", "4");
+  closeButtonSVG.setAttribute("stroke-linecap", "round");
+  closeButtonSVG.setAttribute("stroke-linejoin", "round");
+
+  // Create the lines for the "X"
+  const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line1.setAttribute("x1", "18");
+  line1.setAttribute("y1", "6");
+  line1.setAttribute("x2", "6");
+  line1.setAttribute("y2", "18");
+
+  const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line2.setAttribute("x1", "6");
+  line2.setAttribute("y1", "6");
+  line2.setAttribute("x2", "18");
+  line2.setAttribute("y2", "18");
+
+  // Append the lines to the SVG
+  closeButtonSVG.appendChild(line1);
+  closeButtonSVG.appendChild(line2);
+
+  // Return the SVG element
+  return closeButtonSVG;
+}
+
+function createNextArrowSVG() {
+  // Create the SVG element
+  const nextArrowSVG = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg"
+  );
+  nextArrowSVG.setAttribute("class", "zifty-button");
+  nextArrowSVG.setAttribute("viewBox", "0 0 24 24");
+  nextArrowSVG.setAttribute("fill", "none");
+  nextArrowSVG.setAttribute("stroke", "white");
+  nextArrowSVG.setAttribute("stroke-width", "4");
+  nextArrowSVG.setAttribute("stroke-linecap", "round");
+  nextArrowSVG.setAttribute("stroke-linejoin", "round");
+
+  // Create the polyline for the arrow
+  const polyline = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "polyline"
+  );
+  polyline.setAttribute("points", "6 22 12 12 6 2");
+
+  // Append the polyline to the SVG
+  nextArrowSVG.appendChild(polyline);
+
+  // Return the SVG element
+  return nextArrowSVG;
+}
+
+function createBackArrowSVG() {
+  // Create the SVG element
+  const backArrowSVG = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg"
+  );
+  backArrowSVG.setAttribute("class", "zifty-button");
+  backArrowSVG.setAttribute("viewBox", "0 0 24 24");
+  backArrowSVG.setAttribute("fill", "none");
+  backArrowSVG.setAttribute("stroke", "white");
+  backArrowSVG.setAttribute("stroke-width", "4");
+  backArrowSVG.setAttribute("stroke-linecap", "round");
+  backArrowSVG.setAttribute("stroke-linejoin", "round");
+
+  // Create the polyline for the arrow
+  const polyline = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "polyline"
+  );
+  polyline.setAttribute("points", "18 22 12 12 18 2");
+
+  // Append the polyline to the SVG
+  backArrowSVG.appendChild(polyline);
+
+  // Return the SVG element
+  return backArrowSVG;
 }
