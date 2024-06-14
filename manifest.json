@@ -1,7 +1,7 @@
 {
   "name": "Zifty",
   "version": "1.1.1",
-  "description": "Secondhand alternatives to firsthand products!",
+  "description": "Discover secondhand treasures while you shop!",
   "author": "Zifty",
   "manifest_version": 3,
   "permissions": ["offscreen", "geolocation"],
