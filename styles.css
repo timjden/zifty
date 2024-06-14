@@ -36,7 +36,7 @@
 .listings-container {
   width: 96%;
   height: 100%;
-  border: 1px solid yellow;
+  /* border: 1px solid yellow; */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -87,13 +87,13 @@
   top: 45%;
   right: 0.2%;
   width: 100%;
-  border: 1px solid turquoise;
+  /* border: 1px solid turquoise; */
 }
 #previous-arrow-container {
   top: 45%;
   left: 0.2%;
   width: 100%;
-  border: 1px solid turquoise;
+  /* border: 1px solid turquoise; */
 }
 
 .listing {
@@ -147,13 +147,10 @@
 .listing-price,
 .listing-location {
   width: 100%;
-  height: 33%;
   min-height: 21px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  /* border: 1px solid pink; */
-  font-size: 13px;
   font-family: Arial, sans-serif;
   color: white;
   padding-left: 2px;
@@ -161,8 +158,26 @@
   text-align: center;
 }
 
-.listing-price {
+.listing-location {
+  font-size: 13px;
+  height: 30%;
+  margin-top: -3px;
+  /* border: solid 1px yellow; */
+}
+
+.listing-title {
+  height: 30%;
   font-weight: bold;
+  font-size: 14px;
+  /* border: 1px solid blue; */
+}
+
+.listing-price {
+  height: 40%;
+  font-weight: bold;
+  font-size: 16px;
+  /* border: 1px solid red; */
+  margin-top: -3px;
 }
 
 .zifty-button {
