@@ -47,8 +47,12 @@ chrome.runtime.onMessage.addListener((request) => {
     // If there are no listings, display a message and return
     if (request.data.length === 0) {
       const noListings = document.createElement("span");
+      noListings.style.color = "white";
+      noListings.style.margin = "auto";
+      noListings.style.fontSize = "16px";
       noListings.textContent = "No listings found.";
       listingsSlider.appendChild(noListings);
+      overlay.style.animation = "popUp 0.5s forwards";
       document.body.appendChild(overlay);
       return;
     }
@@ -59,8 +63,8 @@ chrome.runtime.onMessage.addListener((request) => {
     }
 
     // Then populate the overlay with the listings
-    populateOverlay(request, overlay);
     overlay.style.animation = "popUp 0.5s forwards";
+    populateOverlay(request, overlay);
   }
 });
 
