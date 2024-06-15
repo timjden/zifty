@@ -72,6 +72,9 @@ function createOverlay() {
   const overlay = document.createElement("div");
   overlay.id = "zifty-overlay";
 
+  const ziftyContainer = document.createElement("div");
+  ziftyContainer.id = "zifty-container";
+
   const leftButtonContainer = document.createElement("div");
   leftButtonContainer.className = "left-button-container";
 
@@ -94,10 +97,11 @@ function createOverlay() {
     overlay.style.animation = "hide 0.5s forwards";
   });
 
-  overlay.appendChild(leftButtonContainer);
-  overlay.appendChild(listingsContainer);
+  overlay.appendChild(ziftyContainer);
+  ziftyContainer.appendChild(leftButtonContainer);
+  ziftyContainer.appendChild(listingsContainer);
   listingsContainer.appendChild(listingsSlider);
-  overlay.appendChild(rightButtonContainer);
+  ziftyContainer.appendChild(rightButtonContainer);
 
   return overlay;
 }
