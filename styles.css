@@ -94,13 +94,13 @@
 }
 
 #next-arrow-container {
-  top: 45%;
+  top: 42%;
   right: 0.2%;
   width: 100%;
   /* border: 1px solid turquoise; */
 }
 #previous-arrow-container {
-  top: 45%;
+  top: 42%;
   left: 0.2%;
   width: 100%;
   /* border: 1px solid turquoise; */
