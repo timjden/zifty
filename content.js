@@ -1,11 +1,16 @@
 const ITEMS_PER_OVERLAY_PAGE = 6;
 let currentIndex = 0;
 let listingsData;
+let sendingSearchDetails = false;
 
 console.log("Zifty has injected a content script into this page.");
 
 // When the page loads, get the search details and send these to background
 window.addEventListener("load", async () => {
+  if (sendingSearchDetails) {
+    return;
+  }
+  sendingSearchDetails = true;
   let intervalId = setInterval(async () => {
     let result = await onPageLoad();
     if (!containsNullValues(result)) {
@@ -18,6 +23,10 @@ window.addEventListener("load", async () => {
 // When background sends a message that the URL changed, get the search details and send these to background
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
+    if (sendingSearchDetails) {
+      return;
+    }
+    sendingSearchDetails = true;
     let intervalId = setInterval(async () => {
       let result = await onPageLoad();
       if (!containsNullValues(result)) {
@@ -27,6 +36,7 @@ chrome.runtime.onMessage.addListener((request) => {
     }, 1000);
   } else if (request.message === "Listings") {
     console.log(`Received listings from background: ${request.data.length}`);
+    sendingSearchDetails = false;
 
     // If the listingsData is the same as the previous listingsData, return
     if (listingsData === request.data) {
