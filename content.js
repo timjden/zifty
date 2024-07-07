@@ -1,5 +1,4 @@
 const ITEMS_PER_OVERLAY_PAGE = 6;
-
 let currentIndex = 0;
 let listingsData;
 
@@ -34,7 +33,7 @@ chrome.runtime.onMessage.addListener((request) => {
       return;
     }
 
-    listingsData = request.data;
+    listingsData = request.data; // Update the listingsData with the new listings
 
     // When the listings are received from background, create the overlay
     if (document.getElementById("zifty-overlay")) {
@@ -47,9 +46,7 @@ chrome.runtime.onMessage.addListener((request) => {
     // If there are no listings, display a message and return
     if (request.data.length === 0) {
       const noListings = document.createElement("span");
-      noListings.style.color = "white";
-      noListings.style.margin = "auto";
-      noListings.style.fontSize = "16px";
+      noListings.id = "no-listings";
       noListings.textContent = "No listings found.";
       listingsSlider.appendChild(noListings);
       overlay.style.animation = "popUp 0.5s forwards";
@@ -106,26 +103,16 @@ function createOverlay() {
   return overlay;
 }
 
-function getQuery(url, queryParamName) {
+function getSearchDetails(url, queryParamName) {
   const urlObj = new URL(url);
   const queryParams = new URLSearchParams(urlObj.search);
-  return queryParams.get(queryParamName);
-}
-
-function getDetails(url, queryParamName) {
-  let details = {
-    query: null,
-  };
-
-  const query = getQuery(url, queryParamName);
+  const query = queryParams.get(queryParamName);
   if (query === null) {
     console.log(`Could not find query ${queryParamName} in URL`);
-    details.query = null;
+    return { query: null };
   } else {
-    details.query = query;
+    return { query: query };
   }
-
-  return details;
 }
 
 async function onPageLoad() {
@@ -138,16 +125,10 @@ async function onPageLoad() {
   console.log("Zifty is looking for second-hand listings on this page.");
 
   if (window.location.href.includes("takealot.com")) {
-    searchDetails = getDetails(window.location.href, "qsearch");
+    searchDetails = getSearchDetails(window.location.href, "qsearch");
   }
   if (window.location.href.includes("amazon.co.za")) {
-    searchDetails = getDetails(window.location.href, "k");
-  }
-  if (window.location.href.includes("temu.com")) {
-    searchDetails = getDetails(window.location.href, "search_key");
-  }
-  if (window.location.href.includes("loot.co.za")) {
-    searchDetails = getDetails(window.location.href, "terms");
+    searchDetails = getSearchDetails(window.location.href, "k");
   }
 
   console.log(searchDetails);
@@ -172,7 +153,6 @@ function createNextArrow(request, overlay) {
   nextArrowContainer.className = "arrow";
   const nextArrow = createNextArrowSVG();
   nextArrowContainer.appendChild(nextArrow);
-  // nextArrow.textContent = "\u276F";
 
   const rightButtonContainer = overlay.querySelector(".right-button-container");
   rightButtonContainer.appendChild(nextArrowContainer);
@@ -214,18 +194,11 @@ function removeNextArrow(overlay) {
 }
 
 function createPreviousArrow(request, overlay) {
-  // const nextArrowContainer = document.createElement("span");
-  // nextArrowContainer.id = "next-arrow-container";
-  // nextArrowContainer.className = "arrow";
-  // const nextArrow = createNextArrowSVG();
-  // nextArrowContainer.appendChild(nextArrow);
-
   const previousArrowContainer = document.createElement("span");
   previousArrowContainer.id = "previous-arrow-container";
   previousArrowContainer.className = "arrow";
   const previousArrow = createBackArrowSVG();
   previousArrowContainer.appendChild(previousArrow);
-  // previousArrow.textContent = "\u276E";
 
   const leftButtonContainer = overlay.querySelector(".left-button-container");
   leftButtonContainer.appendChild(previousArrowContainer);
