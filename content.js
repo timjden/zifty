@@ -7,7 +7,14 @@ console.log("Zifty has injected a content script into this page.");
 
 // When the page loads, get the search details and send these to background
 window.addEventListener("load", async () => {
-  if (sendingSearchDetails) {
+  // Don't look for search details if they've already been sent, or if the URL is not a search page
+  if (
+    sendingSearchDetails ||
+    !(
+      window.location.href.includes("takealot.com/all?") ||
+      window.location.href.includes("amazon.co.za/s?")
+    )
+  ) {
     return;
   }
   sendingSearchDetails = true;
@@ -23,7 +30,14 @@ window.addEventListener("load", async () => {
 // When background sends a message that the URL changed, get the search details and send these to background
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
-    if (sendingSearchDetails) {
+    // Don't look for search details if they've already been sent, or if the URL is not a search page
+    if (
+      sendingSearchDetails ||
+      !(
+        window.location.href.includes("takealot.com/all?") ||
+        window.location.href.includes("amazon.co.za/s?")
+      )
+    ) {
       return;
     }
     sendingSearchDetails = true;
