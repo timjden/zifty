@@ -8,13 +8,19 @@ console.log("Zifty has injected a content script into this page.");
 // When the page loads, get the search details and send these to background
 window.addEventListener("load", async () => {
   // Don't look for search details if they've already been sent, or if the URL is not a search page
+  if (sendingSearchDetails) {
+    return;
+  }
   if (
-    sendingSearchDetails ||
     !(
       window.location.href.includes("takealot.com/all?") ||
       window.location.href.includes("amazon.co.za/s?")
     )
   ) {
+    const overlay = document.getElementById("zifty-overlay");
+    if (overlay) {
+      document.body.removeChild(overlay);
+    }
     return;
   }
   sendingSearchDetails = true;
@@ -31,13 +37,19 @@ window.addEventListener("load", async () => {
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     // Don't look for search details if they've already been sent, or if the URL is not a search page
+    if (sendingSearchDetails) {
+      return;
+    }
     if (
-      sendingSearchDetails ||
       !(
         window.location.href.includes("takealot.com/all?") ||
         window.location.href.includes("amazon.co.za/s?")
       )
     ) {
+      const overlay = document.getElementById("zifty-overlay");
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
       return;
     }
     sendingSearchDetails = true;
@@ -261,6 +273,8 @@ function removePreviousArrow(overlay) {
 }
 
 function populateOverlay(request, overlay) {
+  const imageLoadPromises = [];
+
   for (let i = currentIndex; i < request.data.length; i++) {
     const listing = request.data[i];
 
@@ -279,8 +293,16 @@ function populateOverlay(request, overlay) {
 
     // Image
     const img = document.createElement("img");
-    imgContainer.appendChild(img);
     img.src = listing.imageSrc;
+
+    // Create a promise for each image load
+    const imgLoadPromise = new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+    });
+    imageLoadPromises.push(imgLoadPromise);
+
+    imgContainer.appendChild(img);
 
     // Span element for the title, to overlay on the image
     const listingDetails = document.createElement("div");
@@ -311,14 +333,19 @@ function populateOverlay(request, overlay) {
 
     // Append the div to the listings container in the overlay
     const listingsSlider = overlay.querySelector(".listings-slider");
-
     listingsSlider.appendChild(listingDiv);
   }
 
-  // If the overlay is not attached to the body, then attach it
-  if (!document.getElementById("zifty-overlay")) {
-    document.body.appendChild(overlay);
-  }
+  // Wait for all images to load before attaching the overlay to the body
+  Promise.all(imageLoadPromises)
+    .then(() => {
+      if (!document.getElementById("zifty-overlay")) {
+        document.body.appendChild(overlay);
+      }
+    })
+    .catch((error) => {
+      console.error("One or more images failed to load", error);
+    });
 }
 
 function createCloseButtonSVG() {
