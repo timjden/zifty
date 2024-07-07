@@ -2,7 +2,7 @@ import { logLocation } from "./geolocation.js";
 
 console.log("Zifty background script is running.");
 
-// Send a message to content.ts if the URL changes
+// Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   if (tab.url && tab.status === "complete" && tab.active) {
     chrome.tabs.sendMessage(tabId, {
@@ -12,11 +12,11 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   }
 });
 
-// Receive the search details from content.js
-chrome.runtime.onMessage.addListener(async (request, sender) => {
+// Receive the search details from content script
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.type === "searchDetails") {
     console.log("Received result:", request.data);
-    const location = await logLocation();
+    const location = await logLocation(); // Get location before sending request to Facebook Marketplace
     console.log("Location:", location);
     const fbListings = await fetchFromFacebookMarketplace(
       request.data.query,
@@ -137,50 +137,4 @@ function convertCurrencyCode(price) {
   return formattedPrice;
 }
 
-// Geolocation stuff
-let creating = null;
-
-async function getGeolocation() {
-  await setupOffscreenDocument("/offscreen.html");
-  const geolocation = await chrome.runtime.sendMessage({
-    type: "get-geolocation",
-    target: "offscreen",
-  });
-  await closeOffscreenDocument();
-  return geolocation;
-}
-
-async function hasDocument() {
-  // Check if the offscreen document already exists
-  return await chrome.offscreen.hasDocument();
-}
-
-async function setupOffscreenDocument(path) {
-  // If the document exists, we skip creation
-  if (await hasDocument()) {
-    return;
-  }
-
-  // Create offscreen document if not already creating one
-  if (creating) {
-    await creating;
-  } else {
-    creating = chrome.offscreen.createDocument({
-      url: path,
-      reasons: [chrome.offscreen.Reason.GEOLOCATION],
-      justification: "geolocation access",
-    });
-
-    await creating;
-    creating = null;
-  }
-}
-
-async function closeOffscreenDocument() {
-  if (!(await hasDocument())) {
-    return;
-  }
-  await chrome.offscreen.closeDocument();
-}
-
-export { fetchFromFacebookMarketplace };
+export { fetchFromFacebookMarketplace }; // Export this for testing
