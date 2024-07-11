@@ -72,11 +72,7 @@ chrome.runtime.onMessage.addListener((request) => {
     listingsData = request.data; // Update the listingsData with the new listings
 
     // When the listings are received from background, create the overlay
-    if (document.getElementById("zifty-overlay")) {
-      document.body.removeChild(document.getElementById("zifty-overlay"));
-    }
-    injectStylesheet();
-    const overlay = createOverlay();
+    const overlay = document.getElementById("zifty-overlay");
     const listingsSlider = overlay.querySelector(".listings-slider");
 
     // If there are no listings, display a message and return
@@ -90,13 +86,7 @@ chrome.runtime.onMessage.addListener((request) => {
       return;
     }
 
-    // Otherwise if there are more than ITEMS_PER_OVERLAY_PAGE listings, create a next arrow
-    if (request.data.length > ITEMS_PER_OVERLAY_PAGE) {
-      createNextArrow(request, overlay);
-    }
-
     // Then populate the overlay with the listings
-    overlay.style.animation = "popUp 0.5s forwards";
     populateOverlay(request, overlay);
   }
 });
@@ -114,9 +104,6 @@ function createOverlay() {
   const listingsContainer = document.createElement("div");
   listingsContainer.className = "listings-container";
 
-  const listingsSlider = document.createElement("div");
-  listingsSlider.className = "listings-slider";
-
   const rightButtonContainer = document.createElement("div");
   rightButtonContainer.className = "right-button-container";
 
@@ -133,8 +120,17 @@ function createOverlay() {
   overlay.appendChild(ziftyContainer);
   ziftyContainer.appendChild(leftButtonContainer);
   ziftyContainer.appendChild(listingsContainer);
-  listingsContainer.appendChild(listingsSlider);
+  // listingsContainer.appendChild(listingsSlider);
   ziftyContainer.appendChild(rightButtonContainer);
+
+  // Show a loading spinner
+  const loadingSpinner = document.createElement("div");
+  loadingSpinner.className = "loading-spinner";
+  listingsContainer.appendChild(loadingSpinner);
+
+  if (!document.getElementById("zifty-overlay")) {
+    document.body.appendChild(overlay);
+  }
 
   return overlay;
 }
@@ -147,6 +143,12 @@ function getSearchDetails(url, queryParamName) {
     console.log(`Could not find query ${queryParamName} in URL`);
     return { query: null };
   } else {
+    if (document.getElementById("zifty-overlay")) {
+      document.body.removeChild(document.getElementById("zifty-overlay"));
+    }
+    injectStylesheet();
+    const overlay = createOverlay();
+    overlay.style.animation = "popUp 0.5s forwards";
     return { query: query };
   }
 }
@@ -275,6 +277,9 @@ function removePreviousArrow(overlay) {
 function populateOverlay(request, overlay) {
   const imageLoadPromises = [];
 
+  const listingsSlider = document.createElement("div");
+  listingsSlider.className = "listings-slider";
+
   for (let i = currentIndex; i < request.data.length; i++) {
     const listing = request.data[i];
 
@@ -332,19 +337,26 @@ function populateOverlay(request, overlay) {
     listingDiv.appendChild(linkElement);
 
     // Append the div to the listings container in the overlay
-    const listingsSlider = overlay.querySelector(".listings-slider");
     listingsSlider.appendChild(listingDiv);
   }
 
-  // Wait for all images to load before attaching the overlay to the body
+  const listingsContainer = overlay.querySelector(".listings-container");
+  const loadingSpinner = listingsContainer.querySelector(".loading-spinner");
+
+  // Wait for all images to load before removing the spinner
   Promise.all(imageLoadPromises)
     .then(() => {
-      if (!document.getElementById("zifty-overlay")) {
-        document.body.appendChild(overlay);
+      listingsContainer.removeChild(loadingSpinner);
+      // If there are more than ITEMS_PER_OVERLAY_PAGE listings, create a next arrow
+      if (request.data.length > ITEMS_PER_OVERLAY_PAGE) {
+        createNextArrow(request, overlay);
       }
+      listingsSlider.classList.add("fade-in");
+      listingsContainer.appendChild(listingsSlider);
     })
     .catch((error) => {
       console.error("One or more images failed to load", error);
+      listingsContainer.removeChild(loadingSpinner);
     });
 }
 

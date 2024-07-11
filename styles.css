@@ -196,3 +196,41 @@
     visibility: hidden;
   }
 }
+
+.loading-spinner {
+  position: absolute;
+  left: 43.5%;
+  top: 14%;
+  width: 12.2%;
+  height: 75%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 8px solid transparent;
+  border-top: 8px solid rgba(123, 136, 149, 255);
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.25s ease-in-out forwards;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
