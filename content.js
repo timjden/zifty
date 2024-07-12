@@ -11,12 +11,7 @@ window.addEventListener("load", async () => {
   if (sendingSearchDetails) {
     return;
   }
-  if (
-    !(
-      window.location.href.includes("takealot.com/all?") ||
-      window.location.href.includes("amazon.co.za/s?")
-    )
-  ) {
+  if (!isSupportedSite()) {
     const overlay = document.getElementById("zifty-overlay");
     if (overlay) {
       document.body.removeChild(overlay);
@@ -40,12 +35,7 @@ chrome.runtime.onMessage.addListener((request) => {
     if (sendingSearchDetails) {
       return;
     }
-    if (
-      !(
-        window.location.href.includes("takealot.com/all?") ||
-        window.location.href.includes("amazon.co.za/s?")
-      )
-    ) {
+    if (!isSupportedSite()) {
       const overlay = document.getElementById("zifty-overlay");
       if (overlay) {
         document.body.removeChild(overlay);
@@ -90,6 +80,28 @@ chrome.runtime.onMessage.addListener((request) => {
     populateOverlay(request, overlay);
   }
 });
+
+function isSupportedSite() {
+  console.log("Checking if the site is supported.");
+  const googleBuyPanelXpath =
+    "//div[contains(concat(' ', normalize-space(@class), ' '), ' cu-container ')]";
+  const googleBuyPanel = document.evaluate(
+    googleBuyPanelXpath,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue;
+  const googleBuyPanelExists = googleBuyPanel !== null;
+  const isGoogleSearchBuyPage =
+    window.location.href.includes("google.com/search?") && googleBuyPanelExists;
+  console.log("isGoogleSearchBuyPage", isGoogleSearchBuyPage);
+  return (
+    window.location.href.includes("takealot.com/all?") ||
+    window.location.href.includes("amazon.co.za/s?") ||
+    isGoogleSearchBuyPage
+  );
+}
 
 function createOverlay() {
   const overlay = document.createElement("div");
@@ -167,6 +179,9 @@ async function onPageLoad() {
   }
   if (window.location.href.includes("amazon.co.za")) {
     searchDetails = getSearchDetails(window.location.href, "k");
+  }
+  if (window.location.href.includes("google.c")) {
+    searchDetails = getSearchDetails(window.location.href, "q");
   }
 
   console.log(searchDetails);
