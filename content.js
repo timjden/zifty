@@ -1,20 +1,14 @@
 const ITEMS_PER_OVERLAY_PAGE = 6;
 let currentIndex = 0;
 let listingsData;
-let sendingSearchDetails = false;
 
 console.log("Zifty has injected a content script into this page.");
 
-// When the page loads, get the search details and send these to background
-window.addEventListener("load", async () => {
-  console.log(
-    "The page has loaded. sendingSearchDetails:",
-    sendingSearchDetails
-  );
-  // Don't look for search details if they've already been sent, or if the URL is not a search page
-  if (sendingSearchDetails) {
-    return;
-  }
+let sendingSearchDetails = false;
+let messageSent = false; // New flag to track if the message has been sent
+
+// Function to get search details and send the message
+async function getSearchDetailsAndSend() {
   if (!isSupportedSite()) {
     const overlay = document.getElementById("zifty-overlay");
     if (overlay) {
@@ -22,14 +16,30 @@ window.addEventListener("load", async () => {
     }
     return;
   }
-  sendingSearchDetails = true;
+
   let intervalId = setInterval(async () => {
     let result = await onPageLoad();
     if (!containsNullValues(result)) {
       clearInterval(intervalId);
-      chrome.runtime.sendMessage({ type: "searchDetails", data: result });
+      if (!messageSent) {
+        // Check if the message has already been sent
+        chrome.runtime.sendMessage({ type: "searchDetails", data: result });
+        messageSent = true; // Set the flag to true after sending the message
+      }
     }
   }, 1000);
+}
+
+// When the page loads, get the search details and send these to background
+window.addEventListener("load", async () => {
+  console.log(
+    "The page has loaded. sendingSearchDetails:",
+    sendingSearchDetails
+  );
+  if (!sendingSearchDetails) {
+    sendingSearchDetails = true;
+    getSearchDetailsAndSend();
+  }
 });
 
 // When background sends a message that the URL changed, get the search details and send these to background
@@ -39,28 +49,15 @@ chrome.runtime.onMessage.addListener((request) => {
     sendingSearchDetails
   );
   if (request.message === "URL changed") {
-    // Don't look for search details if they've already been sent, or if the URL is not a search page
-    if (sendingSearchDetails) {
-      return;
+    if (!sendingSearchDetails) {
+      sendingSearchDetails = true;
+      messageSent = false; // Reset the flag when URL changes
+      getSearchDetailsAndSend();
     }
-    if (!isSupportedSite()) {
-      const overlay = document.getElementById("zifty-overlay");
-      if (overlay) {
-        document.body.removeChild(overlay);
-      }
-      return;
-    }
-    sendingSearchDetails = true;
-    let intervalId = setInterval(async () => {
-      let result = await onPageLoad();
-      if (!containsNullValues(result)) {
-        clearInterval(intervalId);
-        chrome.runtime.sendMessage({ type: "searchDetails", data: result });
-      }
-    }, 1000);
   } else if (request.message === "Listings") {
     console.log(`Received listings from background: ${request.data.length}`);
     sendingSearchDetails = false;
+    messageSent = false; // Reset the flag for new listings
 
     // If the listingsData is the same as the previous listingsData, return
     if (listingsData === request.data) {
