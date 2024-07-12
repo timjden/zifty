@@ -21,7 +21,9 @@
     {
       "matches": [
         "https://www.takealot.com/all?*",
-        "https://www.amazon.co.za/s?*"
+        "https://www.amazon.co.za/s?*",
+        "https://www.google.com/search?*",
+        "https://www.google.co.za/search?*"
       ],
       "js": ["content.js"]
     }
@@ -29,6 +31,8 @@
   "host_permissions": [
     "https://www.takealot.com/all?*",
     "https://www.amazon.co.za/s?*",
+    "https://www.google.com/search?*",
+    "https://www.google.co.za/search?*",
     "https://www.facebook.com/api/graphql/"
   ],
   "icons": {
@@ -41,7 +45,12 @@
   "web_accessible_resources": [
     {
       "resources": ["styles.css"],
-      "matches": ["https://www.takealot.com/*", "https://www.amazon.co.za/*"]
+      "matches": [
+        "https://www.takealot.com/*",
+        "https://www.amazon.co.za/*",
+        "https://www.google.com/*",
+        "https://www.google.co.za/*"
+      ]
     }
   ]
 }
