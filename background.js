@@ -19,7 +19,11 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     const location = await logLocation(); // Get location before sending request to Facebook Marketplace
     console.log("Location:", location);
     const fbListings = await fetchFromFacebookMarketplace(
-      request.data.query,
+      // Remove common shopping keywords from the query
+      request.data.query.replace(
+        /buy|purchase|order|for sale|cheap|discount|deals|price|where to buy|best to buy|shop|online/gi,
+        ""
+      ),
       {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
