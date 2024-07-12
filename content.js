@@ -7,6 +7,10 @@ console.log("Zifty has injected a content script into this page.");
 
 // When the page loads, get the search details and send these to background
 window.addEventListener("load", async () => {
+  console.log(
+    "The page has loaded. sendingSearchDetails:",
+    sendingSearchDetails
+  );
   // Don't look for search details if they've already been sent, or if the URL is not a search page
   if (sendingSearchDetails) {
     return;
@@ -30,6 +34,10 @@ window.addEventListener("load", async () => {
 
 // When background sends a message that the URL changed, get the search details and send these to background
 chrome.runtime.onMessage.addListener((request) => {
+  console.log(
+    "The URL has changed. sendingSearchDetails:",
+    sendingSearchDetails
+  );
   if (request.message === "URL changed") {
     // Don't look for search details if they've already been sent, or if the URL is not a search page
     if (sendingSearchDetails) {
