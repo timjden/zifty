@@ -61,22 +61,8 @@ chrome.runtime.onMessage.addListener((request) => {
 
     listingsData = request.data; // Update the listingsData with the new listings
 
-    // When the listings are received from background, create the overlay
+    // When the listings are received from background, populate the overlay
     const overlay = document.getElementById("zifty-overlay");
-    const listingsSlider = overlay.querySelector(".listings-slider");
-
-    // If there are no listings, display a message and return
-    if (request.data.length === 0) {
-      const noListings = document.createElement("span");
-      noListings.id = "no-listings";
-      noListings.textContent = "No listings found.";
-      listingsSlider.appendChild(noListings);
-      overlay.style.animation = "popUp 0.5s forwards";
-      document.body.appendChild(overlay);
-      return;
-    }
-
-    // Then populate the overlay with the listings
     populateOverlay(request, overlay);
   }
 });
@@ -362,6 +348,15 @@ function populateOverlay(request, overlay) {
   Promise.all(imageLoadPromises)
     .then(() => {
       listingsContainer.removeChild(loadingSpinner);
+      // If there are no listings, display a message and return
+      if (request.data.length === 0) {
+        const noListings = document.createElement("span");
+        noListings.id = "no-listings";
+        noListings.textContent = `No listings found for "${request.query}".`;
+        listingsSlider.appendChild(noListings);
+        listingsContainer.appendChild(listingsSlider);
+        return;
+      }
       // If there are more than ITEMS_PER_OVERLAY_PAGE listings, create a next arrow
       if (request.data.length > ITEMS_PER_OVERLAY_PAGE) {
         createNextArrow(request, overlay);
