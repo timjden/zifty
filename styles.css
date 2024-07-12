@@ -14,6 +14,7 @@
   align-items: center;
   margin: auto;
   box-shadow: 0 0 30px rgba(10, 10, 10, 0.9);
+  box-sizing: border-box;
 }
 
 #zifty-container {
@@ -23,6 +24,7 @@
   left: 0;
   bottom: 0;
   right: 0;
+  box-sizing: border-box;
 }
 
 .left-button-container,
@@ -31,6 +33,7 @@
   width: 2%;
   height: 100%;
   min-width: 25px;
+  box-sizing: border-box;
 }
 
 .listings-container {
@@ -41,6 +44,7 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .listings-slider {
@@ -169,6 +173,7 @@
   color: white;
   margin: auto;
   font-size: 16px;
+  box-sizing: border-box;
 }
 
 .zifty-button {
@@ -214,6 +219,7 @@
   border-radius: 50%;
   animation: spin 1.5s linear infinite;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
 @keyframes fadeIn {
