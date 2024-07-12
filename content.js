@@ -149,9 +149,10 @@ function getSearchDetails(url, queryParamName) {
     console.log(`Could not find query ${queryParamName} in URL`);
     return { query: null };
   } else {
+    // Remove common search terms from the query
     query = query
       .replace(
-        /buy|purchase|order|for sale|cheap|discount|deals|price|where|best|to buy|shop|online/gi,
+        /buy|purchase|order|for sale|cheap|discount|deals|price|where|best|to buy|shop|online|near me|top rated|open now/gi,
         ""
       )
       .trim();
