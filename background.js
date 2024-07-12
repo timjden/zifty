@@ -20,10 +20,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     console.log("Location:", location);
     const fbListings = await fetchFromFacebookMarketplace(
       // Remove common shopping keywords from the query
-      request.data.query.replace(
-        /buy|purchase|order|for sale|cheap|discount|deals|price|where to buy|best to buy|shop|online/gi,
-        ""
-      ),
+      request.data.query,
       {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,

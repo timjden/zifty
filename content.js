@@ -144,11 +144,17 @@ function createOverlay() {
 function getSearchDetails(url, queryParamName) {
   const urlObj = new URL(url);
   const queryParams = new URLSearchParams(urlObj.search);
-  const query = queryParams.get(queryParamName);
+  let query = queryParams.get(queryParamName);
   if (query === null) {
     console.log(`Could not find query ${queryParamName} in URL`);
     return { query: null };
   } else {
+    query = query
+      .replace(
+        /buy|purchase|order|for sale|cheap|discount|deals|price|where|best|to buy|shop|online/gi,
+        ""
+      )
+      .trim();
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"));
     }
