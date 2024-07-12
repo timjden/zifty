@@ -29,6 +29,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     console.log("Number of listings:", fbListings.length);
     chrome.tabs.sendMessage(sender.tab.id, {
       message: "Listings",
+      query: request.data.query,
       data: fbListings,
     });
   }
