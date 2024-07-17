@@ -1,5 +1,5 @@
 Feature: Zifty popup
-  Scenario: User clicks "Load More" button on Takealot
+  Scenario: User clicks Load More button on Takealot
     Given I have searched for "tent" on Takealot
     Then Zifty popup is diplayed
     When I close the Zifty popup
