@@ -1,6 +1,7 @@
 const ITEMS_PER_OVERLAY_PAGE = 6;
 let currentIndex = 0;
 let listingsData;
+let queryData = { query: null };
 
 console.log("Zifty has injected a content script into this page.");
 
@@ -8,7 +9,7 @@ let sendingSearchDetails = false;
 let messageSent = false; // New flag to track if the message has been sent
 
 // Function to get search details and send the message
-async function getSearchDetailsAndSend() {
+async function getSearchDetailsAndSend(isTriggeredByURLChange = false) {
   if (!isSupportedSite()) {
     const overlay = document.getElementById("zifty-overlay");
     if (overlay) {
@@ -18,12 +19,20 @@ async function getSearchDetailsAndSend() {
   }
 
   let intervalId = setInterval(async () => {
-    let result = await onPageLoad();
+    let result = await onPageLoad(isTriggeredByURLChange);
+    // If getting search details was triggered by a URL change and the query is the same as the previous query, return
+    if (result.identicalQuery && result.isTriggeredByURLChange) {
+      clearInterval(intervalId);
+      sendingSearchDetails = false;
+      return;
+    }
+    // Keep checking until the search details are found
     if (!containsNullValues(result)) {
       clearInterval(intervalId);
+      // Check if the message has already been sent
       if (!messageSent) {
-        // Check if the message has already been sent
         chrome.runtime.sendMessage({ type: "searchDetails", data: result });
+        queryData = result; // Store the query data
         messageSent = true; // Set the flag to true after sending the message
       }
     }
@@ -38,7 +47,7 @@ window.addEventListener("load", async () => {
   );
   if (!sendingSearchDetails) {
     sendingSearchDetails = true;
-    getSearchDetailsAndSend();
+    getSearchDetailsAndSend((isTriggeredByURLChange = false));
   }
 });
 
@@ -52,7 +61,7 @@ chrome.runtime.onMessage.addListener((request) => {
     if (!sendingSearchDetails) {
       sendingSearchDetails = true;
       messageSent = false; // Reset the flag when URL changes
-      getSearchDetailsAndSend();
+      getSearchDetailsAndSend((isTriggeredByURLChange = true));
     }
   } else if (request.message === "Listings") {
     console.log(`Received listings from background: ${request.data.length}`);
@@ -138,13 +147,26 @@ function createOverlay() {
   return overlay;
 }
 
-function getSearchDetails(url, queryParamName) {
+function getSearchDetails(url, queryParamName, isTriggeredByURLChange) {
   const urlObj = new URL(url);
   const queryParams = new URLSearchParams(urlObj.search);
   let query = queryParams.get(queryParamName);
+  if (isTriggeredByURLChange && query === queryData.query) {
+    return {
+      query: query,
+      queryNotFound: null,
+      identicalQuery: true,
+      isTriggeredByURLChange: isTriggeredByURLChange,
+    };
+  }
   if (query === null) {
     console.log(`Could not find query ${queryParamName} in URL`);
-    return { query: null };
+    return {
+      query: null,
+      queryNotFound: true,
+      identicalQuery: null,
+      isTriggeredByURLChange: isTriggeredByURLChange,
+    };
   } else {
     // Remove common search terms from the query
     query = query
@@ -159,11 +181,16 @@ function getSearchDetails(url, queryParamName) {
     injectStylesheet();
     const overlay = createOverlay();
     overlay.style.animation = "popUp 0.5s forwards";
-    return { query: query };
+    return {
+      query: query,
+      queryNotFound: false,
+      identicalQuery: false,
+      isTriggeredByURLChange: isTriggeredByURLChange,
+    };
   }
 }
 
-async function onPageLoad() {
+async function onPageLoad(isTriggeredByURLChange = false) {
   // Clear the currentIndex on page load
   currentIndex = 0;
 
@@ -173,13 +200,25 @@ async function onPageLoad() {
   console.log("Zifty is looking for second-hand listings on this page.");
 
   if (window.location.href.includes("takealot.com")) {
-    searchDetails = getSearchDetails(window.location.href, "qsearch");
+    searchDetails = getSearchDetails(
+      window.location.href,
+      "qsearch",
+      isTriggeredByURLChange
+    );
   }
   if (window.location.href.includes("amazon.co.za")) {
-    searchDetails = getSearchDetails(window.location.href, "k");
+    searchDetails = getSearchDetails(
+      window.location.href,
+      "k",
+      isTriggeredByURLChange
+    );
   }
   if (window.location.href.includes("google.c")) {
-    searchDetails = getSearchDetails(window.location.href, "q");
+    searchDetails = getSearchDetails(
+      window.location.href,
+      "q",
+      isTriggeredByURLChange
+    );
   }
 
   console.log(searchDetails);
