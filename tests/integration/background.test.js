@@ -1,6 +1,6 @@
 import test from "ava";
-import "../mocks/chrome.js";
-import { fetchFromFacebookMarketplace } from "../background.js";
+import "../../mocks/chrome.js";
+import { fetchFromFacebookMarketplace } from "../../background.js";
 
 test("request to fb marketplace with cape town location and query 'bicycle' returns results", async (t) => {
   const listings = await fetchFromFacebookMarketplace(
