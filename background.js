@@ -18,6 +18,24 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     console.log("Received result:", request.data);
     const location = await logLocation(); // Get location before sending request to Facebook Marketplace
     console.log("Location:", location);
+    if (request.data.page === "google") {
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      const body = JSON.stringify({ query: request.data.query });
+      const response = await fetch(
+        "https://faas-lon1-917a94a7.doserverless.co/api/v1/web/fn-34b67a07-1799-4dd9-9c70-2fa0b30b4db9/default/completion",
+        {
+          method: "POST",
+          headers,
+          body,
+        }
+      );
+      const data = await response.json();
+      const completion = data.completion;
+      console.log("Completion:", completion);
+      request.data.query = completion;
+    }
     const fbListings = await fetchFromFacebookMarketplace(
       // Remove common shopping keywords from the query
       request.data.query,
