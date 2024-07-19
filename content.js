@@ -31,7 +31,10 @@ async function getSearchDetailsAndSend(isTriggeredByURLChange = false) {
       clearInterval(intervalId);
       // Check if the message has already been sent
       if (!messageSent) {
-        chrome.runtime.sendMessage({ type: "searchDetails", data: result });
+        chrome.runtime.sendMessage({
+          type: "searchDetails",
+          data: result,
+        });
         queryData = result; // Store the query data
         messageSent = true; // Set the flag to true after sending the message
       }
@@ -169,12 +172,7 @@ function getSearchDetails(url, queryParamName, isTriggeredByURLChange) {
     };
   } else {
     // Remove common search terms from the query
-    query = query
-      .replace(
-        /buy|purchase|order|for sale|cheap|discount|deals|price|where|best|to buy|shop|online|near me|top rated|open now/gi,
-        ""
-      )
-      .trim();
+    query = query.toLowerCase().trim();
     if (document.getElementById("zifty-overlay")) {
       document.body.removeChild(document.getElementById("zifty-overlay"));
     }
@@ -205,6 +203,7 @@ async function onPageLoad(isTriggeredByURLChange = false) {
       "qsearch",
       isTriggeredByURLChange
     );
+    searchDetails.page = "takealot";
   }
   if (window.location.href.includes("amazon.co.za")) {
     searchDetails = getSearchDetails(
@@ -212,6 +211,7 @@ async function onPageLoad(isTriggeredByURLChange = false) {
       "k",
       isTriggeredByURLChange
     );
+    searchDetails.page = "amazon";
   }
   if (window.location.href.includes("google.c")) {
     searchDetails = getSearchDetails(
@@ -219,6 +219,7 @@ async function onPageLoad(isTriggeredByURLChange = false) {
       "q",
       isTriggeredByURLChange
     );
+    searchDetails.page = "google";
   }
 
   console.log(searchDetails);
