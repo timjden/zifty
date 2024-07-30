@@ -19,6 +19,10 @@ let ziftyOverlay; // Holds the Zifty overlay element
 // When a page loads, send a message to the background script asking for the relevant listings
 window.addEventListener("load", () => {
   console.log("Page loaded");
+  if (!isSupportedSite()) {
+    console.log("This page is not supported by Zifty");
+    return;
+  }
 
   if (!sendingSearchDetailsToBackground) {
     const searchDetails = getSearchDetails();
@@ -35,6 +39,10 @@ window.addEventListener("load", () => {
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     console.log("URL changed");
+    if (!isSupportedSite()) {
+      console.log("This page is not supported by Zifty");
+      return;
+    }
 
     if (!sendingSearchDetailsToBackground) {
       const searchDetails = getSearchDetails();
