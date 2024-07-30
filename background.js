@@ -37,7 +37,6 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       request.data.query = completion.toLowerCase().trim();
     }
     const fbListings = await fetchFromFacebookMarketplace(
-      // Remove common shopping keywords from the query
       request.data.query,
       {
         latitude: location.coords.latitude,
