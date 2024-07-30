@@ -24,13 +24,13 @@ window.addEventListener("load", () => {
 
   if (!gettingListingsData) {
     console.log(
-      `gettingListingsData is ${gettingListingsData} so getting listings data`
+      `gettingListingsData is ${gettingListingsData} so getting listings data due to page load`
     );
     const searchDetails = getSearchDetails();
     currentSearchDetails = getListingsData(searchDetails); // Sends search query to background
   } else {
     console.log(
-      `gettingListingsData is ${gettingListingsData} so not getting listings data`
+      `gettingListingsData is ${gettingListingsData} so not getting listings data due to page load`
     );
     return;
   }
@@ -47,7 +47,7 @@ chrome.runtime.onMessage.addListener((request) => {
     // Get the relevant listings if they are not already being fetched
     if (!gettingListingsData) {
       console.log(
-        `gettingListingsData is ${gettingListingsData} so getting listings data`
+        `gettingListingsData is ${gettingListingsData} so getting listings data due to URL change`
       );
       const searchDetails = getSearchDetails();
 
@@ -57,10 +57,10 @@ chrome.runtime.onMessage.addListener((request) => {
         return;
       }
 
-      currentSearchDetails = getListingsData(); // Sends search query to background
+      currentSearchDetails = getListingsData(searchDetails); // Sends search query to background
     } else {
       console.log(
-        `gettingListingsData is ${gettingListingsData} so not getting listings data`
+        `gettingListingsData is ${gettingListingsData} so not getting listings data due to URL change`
       );
       return;
     }
@@ -104,10 +104,9 @@ function createZiftyOverlay() {
 function getListingsData(searchDetails) {
   // Only send the message if it has not been sent already
   if (!gettingListingsData) {
-    chrome.runtime.sendMessage({
-      type: "searchDetails",
-      data: searchDetails,
-    });
+    const message = { type: "searchDetails", data: searchDetails };
+    console.log("Sending search details to background", message);
+    chrome.runtime.sendMessage(message);
     gettingListingsData = true; // Set the flag to true after sending the message
   }
   return searchDetails;
