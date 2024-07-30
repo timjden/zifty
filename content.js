@@ -39,7 +39,7 @@ window.addEventListener("load", () => {
   ziftyOverlay = createZiftyOverlay();
 });
 
-// ... OR When the URL changes (this info comes from background) get the relevant listings
+// ... OR when the URL changes (this info comes from background) get the relevant listings
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     console.log("URL changed");
