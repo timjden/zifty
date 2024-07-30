@@ -13,64 +13,49 @@ const ITEMS_PER_OVERLAY_PAGE = 6; // The number of listings to show per page in 
 let currentIndex = 0; // Used to track pagination in the Zifty overlay
 let listingsData; // Place to store the listings received from background (e.g. Facebook Marketplace API)
 let currentSearchDetails = { page: null, query: null }; // Place to store the user's search query and the page they are on
-let gettingListingsData = false; // Flag to prevent multiple, concurrent requests for listings
+let sendingSearchDetailsToBackground = false; // Flag to prevent multiple, concurrent requests for listings
 let ziftyOverlay; // Holds the Zifty overlay element
 
-// When a page loads, get the relevant listings
+// When a page loads, send a message to the background script asking for the relevant listings
 window.addEventListener("load", () => {
   console.log("Page loaded");
 
-  currentSearchDetails = { page: null, query: null }; // Clear existing search details on page load
-
-  if (!gettingListingsData) {
-    console.log(
-      `gettingListingsData is ${gettingListingsData} so getting listings data due to page load`
-    );
+  if (!sendingSearchDetailsToBackground) {
     const searchDetails = getSearchDetails();
-    currentSearchDetails = sendSearchDetailsToBackground(searchDetails); // Sends search query to background
+    currentSearchDetails = sendSearchDetailsToBackground(searchDetails); // Sends search details to background
   } else {
-    console.log(
-      `gettingListingsData is ${gettingListingsData} so not getting listings data due to page load`
-    );
     return;
   }
 
-  currentIndex = 0; // Clear the currentIndex used for pagination
+  currentIndex = 0; // Clear the index used to track pagination
   ziftyOverlay = createZiftyOverlay();
 });
 
-// ... OR when the URL changes (this info comes from background) get the relevant listings
+// ... OR when the URL changes (this info comes from background) send a message to the background script asking for the relevant listings
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
     console.log("URL changed");
 
-    // Get the relevant listings if they are not already being fetched
-    if (!gettingListingsData) {
-      console.log(
-        `gettingListingsData is ${gettingListingsData} so getting listings data due to URL change`
-      );
+    if (!sendingSearchDetailsToBackground) {
       const searchDetails = getSearchDetails();
 
-      // However, if the search query is the same as the previous search query (e.g. URL changes due to pagination), return
+      // If the search query is the same as the previous search query (e.g. URL changes due to pagination), return
       if (searchDetails.query === currentSearchDetails.query) {
         console.log("Search details are the same as before, returning");
         return;
       }
 
-      currentSearchDetails = sendSearchDetailsToBackground(searchDetails); // Sends search query to background
+      currentSearchDetails = sendSearchDetailsToBackground(searchDetails); // Sends search details to background
     } else {
-      console.log(
-        `gettingListingsData is ${gettingListingsData} so not getting listings data due to URL change`
-      );
       return;
     }
 
-    currentIndex = 0; // Clear the currentIndex used for pagination
+    currentIndex = 0; // Clear the index used to track pagination
     ziftyOverlay = createZiftyOverlay();
   } else if (request.message === "Listings") {
-    // To get the relevant listings, content sends the search query to the background which responds with the listings
+    // Once background has the listings data from an external datasource (e.g. Facebook Marketplace API) it sends them to content
     console.log(`Received ${request.data.length} listings from background`);
-    gettingListingsData = false; // Set the flag to false after receiving the listings
+    sendingSearchDetailsToBackground = false; // Set the flag to false after receiving the listings
 
     // If the listings are the same as the previous listings, return
     if (listingsData === request.data) {
@@ -89,7 +74,6 @@ chrome.runtime.onMessage.addListener((request) => {
 });
 
 function createZiftyOverlay() {
-  // First create the Zifty overlay
   if (document.getElementById("zifty-overlay")) {
     console.log("Removing existing overlay first");
     document.body.removeChild(document.getElementById("zifty-overlay"));
@@ -100,14 +84,13 @@ function createZiftyOverlay() {
   return overlay;
 }
 
-// Send a message to the background script with the user's search query
 function sendSearchDetailsToBackground(searchDetails) {
   // Only send the message if it has not been sent already
-  if (!gettingListingsData) {
+  if (!sendingSearchDetailsToBackground) {
     const message = { type: "searchDetails", data: searchDetails };
     console.log("Sending search details to background", message);
     chrome.runtime.sendMessage(message);
-    gettingListingsData = true; // Set the flag to true after sending the message
+    sendingSearchDetailsToBackground = true; // Set the flag to true after sending the message
   }
   return searchDetails;
 }
@@ -165,7 +148,7 @@ function isSupportedSite() {
   );
 }
 
-// The functions below are used to create the Zifty overlay in the DOM
+// The functions below are used to create the Zifty overlay DOM elements
 
 function createOverlay() {
   const overlay = document.createElement("div");
