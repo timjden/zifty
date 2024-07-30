@@ -27,7 +27,7 @@ window.addEventListener("load", () => {
       `gettingListingsData is ${gettingListingsData} so getting listings data due to page load`
     );
     const searchDetails = getSearchDetails();
-    currentSearchDetails = getListingsData(searchDetails); // Sends search query to background
+    currentSearchDetails = sendSearchDetailsToBackground(searchDetails); // Sends search query to background
   } else {
     console.log(
       `gettingListingsData is ${gettingListingsData} so not getting listings data due to page load`
@@ -57,7 +57,7 @@ chrome.runtime.onMessage.addListener((request) => {
         return;
       }
 
-      currentSearchDetails = getListingsData(searchDetails); // Sends search query to background
+      currentSearchDetails = sendSearchDetailsToBackground(searchDetails); // Sends search query to background
     } else {
       console.log(
         `gettingListingsData is ${gettingListingsData} so not getting listings data due to URL change`
@@ -101,7 +101,7 @@ function createZiftyOverlay() {
 }
 
 // Send a message to the background script with the user's search query
-function getListingsData(searchDetails) {
+function sendSearchDetailsToBackground(searchDetails) {
   // Only send the message if it has not been sent already
   if (!gettingListingsData) {
     const message = { type: "searchDetails", data: searchDetails };
