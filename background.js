@@ -34,7 +34,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       const data = await response.json();
       const completion = data.completion;
       console.log("Completion:", completion);
-      request.data.query = completion;
+      request.data.query = completion.toLowerCase().trim();
     }
     const fbListings = await fetchFromFacebookMarketplace(
       // Remove common shopping keywords from the query
