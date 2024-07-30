@@ -1,91 +1,150 @@
-const ITEMS_PER_OVERLAY_PAGE = 6;
-let currentIndex = 0;
-let listingsData;
-let queryData = { query: null };
-
+// This content script will only run on pages with URLs as defined in the manifest.json
 console.log("Zifty has injected a content script into this page.");
 
-let sendingSearchDetails = false;
-let messageSent = false; // New flag to track if the message has been sent
+// But the overlay might stay appended to the page so remove it if the user navigates away
+if (!isSupportedSite()) {
+  const overlay = document.getElementById("zifty-overlay");
+  if (overlay) {
+    document.body.removeChild(overlay);
+  }
+}
 
-// Function to get search details and send the message
-async function getSearchDetailsAndSend(isTriggeredByURLChange = false) {
-  if (!isSupportedSite()) {
-    const overlay = document.getElementById("zifty-overlay");
-    if (overlay) {
-      document.body.removeChild(overlay);
-    }
+const ITEMS_PER_OVERLAY_PAGE = 6; // The number of listings to show per page in the Zifty overlay
+let currentIndex = 0; // Used to track pagination in the Zifty overlay
+let listingsData; // Place to store the listings received from background (e.g. Facebook Marketplace API)
+let currentSearchDetails = { page: null, query: null }; // Place to store the user's search query and the page they are on
+let gettingListingsData = false; // Flag to prevent multiple, concurrent requests for listings
+let ziftyOverlay; // Holds the Zifty overlay element
+
+// When a page loads, get the relevant listings
+window.addEventListener("load", () => {
+  console.log("Page loaded");
+
+  currentSearchDetails = { page: null, query: null }; // Clear existing search details on page load
+
+  if (!gettingListingsData) {
+    console.log(
+      `gettingListingsData is ${gettingListingsData} so getting listings data`
+    );
+    const searchDetails = getSearchDetails();
+    currentSearchDetails = getListingsData(searchDetails); // Sends search query to background
+  } else {
+    console.log(
+      `gettingListingsData is ${gettingListingsData} so not getting listings data`
+    );
     return;
   }
 
-  let intervalId = setInterval(async () => {
-    let result = await onPageLoad(isTriggeredByURLChange);
-    // If getting search details was triggered by a URL change and the query is the same as the previous query, return
-    if (result.identicalQuery && result.isTriggeredByURLChange) {
-      clearInterval(intervalId);
-      sendingSearchDetails = false;
+  currentIndex = 0; // Clear the currentIndex used for pagination
+  ziftyOverlay = createZiftyOverlay();
+});
+
+// ... OR When the URL changes (this info comes from background) get the relevant listings
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.message === "URL changed") {
+    console.log("URL changed");
+
+    // Get the relevant listings if they are not already being fetched
+    if (!gettingListingsData) {
+      console.log(
+        `gettingListingsData is ${gettingListingsData} so getting listings data`
+      );
+      const searchDetails = getSearchDetails();
+
+      // However, if the search query is the same as the previous search query (e.g. URL changes due to pagination), return
+      if (searchDetails.query === currentSearchDetails.query) {
+        console.log("Search details are the same as before, returning");
+        return;
+      }
+
+      currentSearchDetails = getListingsData(); // Sends search query to background
+    } else {
+      console.log(
+        `gettingListingsData is ${gettingListingsData} so not getting listings data`
+      );
       return;
     }
-    // Keep checking until the search details are found
-    if (!containsNullValues(result)) {
-      clearInterval(intervalId);
-      // Check if the message has already been sent
-      if (!messageSent) {
-        chrome.runtime.sendMessage({
-          type: "searchDetails",
-          data: result,
-        });
-        queryData = result; // Store the query data
-        messageSent = true; // Set the flag to true after sending the message
-      }
+
+    currentIndex = 0; // Clear the currentIndex used for pagination
+    ziftyOverlay = createZiftyOverlay();
+  } else if (request.message === "Listings") {
+    // To get the relevant listings, content sends the search query to the background which responds with the listings
+    console.log(`Received ${request.data.length} listings from background`);
+    gettingListingsData = false; // Set the flag to false after receiving the listings
+
+    // If the listings are the same as the previous listings, return
+    if (listingsData === request.data) {
+      console.log("Listings are the same as before, returning");
+      return;
     }
-  }, 1000);
+
+    listingsData = request.data; // Otherwise update listingsData with the new listings
+
+    // Then populate the Zifty overlay with the listings
+    console.log(
+      `Populating overlay with ${request.data.length} listings for "${request.query}"`
+    );
+    populateOverlay(request, ziftyOverlay);
+  }
+});
+
+function createZiftyOverlay() {
+  // First create the Zifty overlay
+  if (document.getElementById("zifty-overlay")) {
+    console.log("Removing existing overlay first");
+    document.body.removeChild(document.getElementById("zifty-overlay"));
+  }
+  const overlay = createOverlay();
+  overlay.style.animation = "popUp 0.5s forwards";
+  injectStylesheet();
+  return overlay;
 }
 
-// When the page loads, get the search details and send these to background
-window.addEventListener("load", async () => {
-  console.log(
-    "The page has loaded. sendingSearchDetails:",
-    sendingSearchDetails
-  );
-  if (!sendingSearchDetails) {
-    sendingSearchDetails = true;
-    getSearchDetailsAndSend((isTriggeredByURLChange = false));
+// Send a message to the background script with the user's search query
+function getListingsData(searchDetails) {
+  // Only send the message if it has not been sent already
+  if (!gettingListingsData) {
+    chrome.runtime.sendMessage({
+      type: "searchDetails",
+      data: searchDetails,
+    });
+    gettingListingsData = true; // Set the flag to true after sending the message
   }
-});
+  return searchDetails;
+}
 
-// When background sends a message that the URL changed, get the search details and send these to background
-chrome.runtime.onMessage.addListener((request) => {
-  console.log(
-    "The URL has changed. sendingSearchDetails:",
-    sendingSearchDetails
-  );
-  if (request.message === "URL changed") {
-    if (!sendingSearchDetails) {
-      sendingSearchDetails = true;
-      messageSent = false; // Reset the flag when URL changes
-      getSearchDetailsAndSend((isTriggeredByURLChange = true));
-    }
-  } else if (request.message === "Listings") {
-    console.log(`Received listings from background: ${request.data.length}`);
-    sendingSearchDetails = false;
-    messageSent = false; // Reset the flag for new listings
-
-    // If the listingsData is the same as the previous listingsData, return
-    if (listingsData === request.data) {
-      return;
-    }
-
-    listingsData = request.data; // Update the listingsData with the new listings
-
-    // When the listings are received from background, populate the overlay
-    const overlay = document.getElementById("zifty-overlay");
-    populateOverlay(request, overlay);
+function getSearchDetails() {
+  let searchDetails = { page: null, query: null };
+  if (window.location.href.includes("takealot.com")) {
+    searchDetails.page = "takealot";
+    searchDetails.query = extractQueryParamValue(
+      window.location.href,
+      "qsearch"
+    );
+  } else if (window.location.href.includes("amazon.co.za")) {
+    searchDetails.page = "amazon";
+    searchDetails.query = extractQueryParamValue(window.location.href, "k");
+  } else if (window.location.href.includes("google.c")) {
+    searchDetails.page = "google";
+    searchDetails.query = extractQueryParamValue(window.location.href, "q");
   }
-});
+  return searchDetails;
+}
+
+function extractQueryParamValue(url, queryParamName) {
+  const urlObj = new URL(url);
+  const queryParams = new URLSearchParams(urlObj.search);
+  let query = queryParams.get(queryParamName);
+  if (query === null) {
+    console.log(`Could not find query ${queryParamName} in URL`);
+  } else {
+    query = query.toLowerCase().trim();
+  }
+  return query;
+}
 
 function isSupportedSite() {
-  console.log("Checking if the site is supported.");
+  // Check if this is a Google search page with product listings
   const googleBuyPanelXpath =
     "//div[contains(concat(' ', normalize-space(@class), ' '), ' cu-container ')]";
   const googleBuyPanel = document.evaluate(
@@ -98,13 +157,16 @@ function isSupportedSite() {
   const googleBuyPanelExists = googleBuyPanel !== null;
   const isGoogleSearchBuyPage =
     window.location.href.includes("google.com/search?") && googleBuyPanelExists;
-  console.log("isGoogleSearchBuyPage", isGoogleSearchBuyPage);
+
+  // Return true if the user is on Takealot.com, Amazon.co.za or a Google search page with product listings
   return (
     window.location.href.includes("takealot.com/all?") ||
     window.location.href.includes("amazon.co.za/s?") ||
     isGoogleSearchBuyPage
   );
 }
+
+// The functions below are used to create the Zifty overlay in the DOM
 
 function createOverlay() {
   const overlay = document.createElement("div");
@@ -135,7 +197,6 @@ function createOverlay() {
   overlay.appendChild(ziftyContainer);
   ziftyContainer.appendChild(leftButtonContainer);
   ziftyContainer.appendChild(listingsContainer);
-  // listingsContainer.appendChild(listingsSlider);
   ziftyContainer.appendChild(rightButtonContainer);
 
   // Show a loading spinner
@@ -148,86 +209,6 @@ function createOverlay() {
   }
 
   return overlay;
-}
-
-function getSearchDetails(url, queryParamName, isTriggeredByURLChange) {
-  const urlObj = new URL(url);
-  const queryParams = new URLSearchParams(urlObj.search);
-  let query = queryParams.get(queryParamName);
-  if (isTriggeredByURLChange && query === queryData.query) {
-    return {
-      query: query,
-      queryNotFound: null,
-      identicalQuery: true,
-      isTriggeredByURLChange: isTriggeredByURLChange,
-    };
-  }
-  if (query === null) {
-    console.log(`Could not find query ${queryParamName} in URL`);
-    return {
-      query: null,
-      queryNotFound: true,
-      identicalQuery: null,
-      isTriggeredByURLChange: isTriggeredByURLChange,
-    };
-  } else {
-    // Remove common search terms from the query
-    query = query.toLowerCase().trim();
-    if (document.getElementById("zifty-overlay")) {
-      document.body.removeChild(document.getElementById("zifty-overlay"));
-    }
-    injectStylesheet();
-    const overlay = createOverlay();
-    overlay.style.animation = "popUp 0.5s forwards";
-    return {
-      query: query,
-      queryNotFound: false,
-      identicalQuery: false,
-      isTriggeredByURLChange: isTriggeredByURLChange,
-    };
-  }
-}
-
-async function onPageLoad(isTriggeredByURLChange = false) {
-  // Clear the currentIndex on page load
-  currentIndex = 0;
-
-  // When a page loads, get the search details
-  let searchDetails = {};
-
-  console.log("Zifty is looking for second-hand listings on this page.");
-
-  if (window.location.href.includes("takealot.com")) {
-    searchDetails = getSearchDetails(
-      window.location.href,
-      "qsearch",
-      isTriggeredByURLChange
-    );
-    searchDetails.page = "takealot";
-  }
-  if (window.location.href.includes("amazon.co.za")) {
-    searchDetails = getSearchDetails(
-      window.location.href,
-      "k",
-      isTriggeredByURLChange
-    );
-    searchDetails.page = "amazon";
-  }
-  if (window.location.href.includes("google.c")) {
-    searchDetails = getSearchDetails(
-      window.location.href,
-      "q",
-      isTriggeredByURLChange
-    );
-    searchDetails.page = "google";
-  }
-
-  console.log(searchDetails);
-  return searchDetails;
-}
-
-function containsNullValues(result) {
-  return !result || Object.values(result).some((x) => x === null);
 }
 
 function injectStylesheet() {
