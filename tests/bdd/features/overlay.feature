@@ -47,6 +47,10 @@ Scenario: User searches Google for something other than a product to buy
     Given I have searched for "how to pitch a tent" on Google
     Then Zifty overlay is not displayed
 
-Scenario: Zifty can't find any products to display
-    Given I have searched for "asdfghjkl" on Takealot
+Scenario Outline: Zifty can't find any products to display
+    Given I have searched for "<search_term>" on Takealot
     Then Zifty overlay is displayed with a message saying no products were found
+    Examples:
+      | search_term           |
+      | asdfghjkl             |
+      | lavalier microphone   |
