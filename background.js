@@ -55,6 +55,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 });
 
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
+  let listings = [];
   try {
     const url = "https://www.facebook.com/api/graphql/";
 
@@ -119,7 +120,6 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
       credentials: "omit",
     });
     const data = await response.json();
-    let listings = [];
 
     if (
       !data.data?.marketplace_search?.feed_units?.edges[0]?.node?.listing?.id
