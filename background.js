@@ -129,7 +129,9 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
       listings = data.data.marketplace_search.feed_units.edges.map((edge) => {
         return {
           id: edge.node.listing.id,
-          imageSrc: edge.node.listing.primary_listing_photo.image.uri,
+          imageSrc:
+            edge.node.listing.primary_listing_photo?.image?.uri ||
+            "https://i.imgur.com/buvAnZH.png",
           link: `https://www.facebook.com/marketplace/item/${edge.node.listing.id}`,
           title: edge.node.listing.marketplace_listing_title,
           price: convertCurrencyCode(
