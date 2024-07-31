@@ -143,6 +143,8 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
     return listings;
   } catch (error) {
     console.error("Error fetching from Marketplace:", error);
+    listings = [];
+    return listings;
   }
 }
 
