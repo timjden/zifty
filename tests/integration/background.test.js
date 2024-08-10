@@ -29,3 +29,5 @@ test("request to fb marketplace with hoofdorp location and query 'fiets' returns
   t.true(Array.isArray(listings));
   t.true(listings.length > 0);
 });
+
+// TODO: Test that Zifty can handle missing data in response from Facebook Marketplace e.g. missing image, price, etc.
