@@ -4,7 +4,17 @@
   "description": "Discover secondhand treasures while you shop!",
   "author": "Zifty",
   "manifest_version": 3,
-  "permissions": ["offscreen", "geolocation"],
+  "permissions": [
+    "offscreen",
+    "geolocation",
+    "identity",
+    "identity.email",
+    "storage"
+  ],
+  "oauth2": {
+    "client_id": "453820350601-27jgm58vqe3qrmrs3mt4i2ovftjjhkom.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/userinfo.email"]
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
