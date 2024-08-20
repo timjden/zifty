@@ -1,6 +1,6 @@
 import { logLocation } from "./geolocation.js";
 
-console.log("Zifty background script is running.");
+// console.log("Zifty background script is running.");
 
 // Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
