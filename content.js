@@ -107,11 +107,14 @@ function getSearchDetails() {
   let searchDetails = { page: null, query: null };
   const url = new URL(window.location.href);
   const hostname = url.hostname;
+  console.log("Getting search details for", hostname);
 
-  if (/^amazon\./.test(hostname)) {
+  if (/\.amazon\./.test(hostname)) {
+    console.log("Amazon search page detected");
     searchDetails.page = "amazon";
     searchDetails.query = extractQueryParamValue(url.href, "k");
-  } else if (/^google\./.test(hostname)) {
+  } else if (/\.google\./.test(hostname)) {
+    console.log("Google search page detected");
     searchDetails.page = "google";
     searchDetails.query = extractQueryParamValue(url.href, "q");
   }

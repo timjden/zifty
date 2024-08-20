@@ -19,15 +19,11 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.amazon.*/*", "https://*.google.*/search?*"],
+      "matches": ["<all_urls>"],
       "js": ["content.js"]
     }
   ],
-  "host_permissions": [
-    "https://*.amazon.*/*",
-    "https://*.google.*/search?*",
-    "https://*.facebook.com/api/graphql/*"
-  ],
+  "host_permissions": ["<all_urls>"],
   "icons": {
     "16": "assets/icon16.png",
     "32": "assets/icon32.png",
@@ -38,7 +34,7 @@
   "web_accessible_resources": [
     {
       "resources": ["styles.css"],
-      "matches": ["https://*.amazon.*/*", "https://*.google.*/search?*"]
+      "matches": ["<all_urls>"]
     }
   ]
 }
