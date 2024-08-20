@@ -19,21 +19,14 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://www.takealot.com/all?*",
-        "https://www.amazon.co.za/s?*",
-        "https://www.google.com/search?*",
-        "https://www.google.co.za/search?*"
-      ],
+      "matches": ["https://*.amazon.*/*", "https://*.google.*/search?*"],
       "js": ["content.js"]
     }
   ],
   "host_permissions": [
-    "https://www.takealot.com/all?*",
-    "https://www.amazon.co.za/s?*",
-    "https://www.google.com/search?*",
-    "https://www.google.co.za/search?*",
-    "https://www.facebook.com/api/graphql/"
+    "https://*.amazon.*/*",
+    "https://*.google.*/search?*",
+    "https://*.facebook.com/api/graphql/*"
   ],
   "icons": {
     "16": "assets/icon16.png",
@@ -45,12 +38,7 @@
   "web_accessible_resources": [
     {
       "resources": ["styles.css"],
-      "matches": [
-        "https://www.takealot.com/*",
-        "https://www.amazon.co.za/*",
-        "https://www.google.com/*",
-        "https://www.google.co.za/*"
-      ]
+      "matches": ["https://*.amazon.*/*", "https://*.google.*/search?*"]
     }
   ]
 }

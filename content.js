@@ -105,19 +105,17 @@ function sendSearchDetailsToBackground(searchDetails) {
 
 function getSearchDetails() {
   let searchDetails = { page: null, query: null };
-  if (window.location.href.includes("takealot.com")) {
-    searchDetails.page = "takealot";
-    searchDetails.query = extractQueryParamValue(
-      window.location.href,
-      "qsearch"
-    );
-  } else if (window.location.href.includes("amazon.co.za")) {
+  const url = new URL(window.location.href);
+  const hostname = url.hostname;
+
+  if (/^amazon\./.test(hostname)) {
     searchDetails.page = "amazon";
-    searchDetails.query = extractQueryParamValue(window.location.href, "k");
-  } else if (window.location.href.includes("google.c")) {
+    searchDetails.query = extractQueryParamValue(url.href, "k");
+  } else if (/^google\./.test(hostname)) {
     searchDetails.page = "google";
-    searchDetails.query = extractQueryParamValue(window.location.href, "q");
+    searchDetails.query = extractQueryParamValue(url.href, "q");
   }
+
   return searchDetails;
 }
 
@@ -145,13 +143,15 @@ function isSupportedSite() {
     null
   ).singleNodeValue;
   const googleBuyPanelExists = googleBuyPanel !== null;
+  const url = new URL(window.location.href);
   const isGoogleSearchBuyPage =
-    window.location.href.includes("google.com/search?") && googleBuyPanelExists;
+    /^www\.google\./.test(url.hostname) &&
+    url.pathname === "/search" &&
+    googleBuyPanelExists;
 
-  // Return true if the user is on Takealot.com, Amazon.co.za or a Google search page with product listings
+  // Return true if the user is on Amazon search results or a Google search page with product listings
   return (
-    window.location.href.includes("takealot.com/all?") ||
-    window.location.href.includes("amazon.co.za/s?") ||
+    (/^www\.amazon\./.test(url.hostname) && url.pathname === "/s") ||
     isGoogleSearchBuyPage
   );
 }
