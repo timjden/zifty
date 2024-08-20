@@ -1,6 +1,11 @@
 {
-  "type": "module",
+  "name": "zifty",
+  "private": true,
+  "version": "0.0.0",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "ava"
   },
   "ava": {
@@ -10,6 +15,8 @@
     ]
   },
   "devDependencies": {
+    "@crxjs/vite-plugin": "^1.0.14",
+    "vite": "^2.9.15",
     "ava": "^6.1.3"
   }
 }
