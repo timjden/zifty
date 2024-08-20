@@ -43,7 +43,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["styles.css"],
+      "resources": [
+        "styles.css",
+        "popup_styles.css",
+        "offscreen.html",
+        "offscreen.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ]
