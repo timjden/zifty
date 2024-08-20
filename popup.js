@@ -24,23 +24,17 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const googleSigninButton = document.createElement("button");
-googleSigninButton.id = "google-signin-button";
-googleSigninButton.textContent = "Login with Google";
-const logoutButton = document.createElement("button");
-logoutButton.id = "logout-button";
-logoutButton.textContent = "Logout";
-const subscribeButton = document.createElement("button");
-subscribeButton.id = "subscribe-button";
-subscribeButton.textContent = "Subscribe";
-const cancelButton = document.createElement("button");
-cancelButton.id = "cancel-button";
-cancelButton.textContent = "Cancel";
-const buttonContainer = document.getElementById("button-container");
+const authButton = document.getElementById("auth-button");
+const subscriptionButton = document.getElementById("subscription-button");
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Define the sign-in and logout event listeners once
+  const loadingDotsHTML =
+    '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
+
   const handleSignIn = () => {
+    // Show loading dots immediately
+    authButton.innerHTML = loadingDotsHTML;
+
     chrome.identity.getAuthToken({ interactive: true }, async (token) => {
       const credential = GoogleAuthProvider.credential(null, token);
       try {
@@ -51,11 +45,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          // User doesn't exist, add to Firestore
           await setDoc(userDocRef, {
             uid: user.uid,
             email: user.email,
-            paidAt: null, // Initialize paidAt as null until payment is received
+            paidAt: null,
           });
           console.log("User added to Firestore:", user.uid);
         } else {
@@ -68,88 +61,83 @@ document.addEventListener("DOMContentLoaded", () => {
           "Firebase Google Sign-In failed:",
           error.message || error
         );
+        authButton.textContent = "Sign in with Google"; // Revert if failed
       }
     });
   };
 
   const handleLogout = () => {
+    // Show loading dots immediately
+    authButton.innerHTML = loadingDotsHTML;
+
     signOut(auth)
       .then(() => {
         console.log("User signed out successfully.");
       })
       .catch((error) => {
         console.error("Sign out failed:", error.message || error);
+        authButton.textContent = "Logout"; // Revert if failed
       });
   };
 
   const handleSubscribe = async () => {
-    try {
-      // Mock subscription logic
-      console.log("User subscribed.");
+    // Show loading dots immediately
+    subscriptionButton.innerHTML = loadingDotsHTML;
 
-      // Update Firestore with new paidAt value
+    try {
+      console.log("User subscribed.");
       const userDocRef = doc(db, "users", auth.currentUser.uid);
       await setDoc(
         userDocRef,
         {
-          paidAt: new Date(), // Set current timestamp
+          paidAt: new Date(),
         },
         { merge: true }
       );
 
-      // Change the Subscribe button to Cancel
-      buttonContainer.removeChild(subscribeButton);
-      buttonContainer.appendChild(cancelButton);
-
-      cancelButton.removeEventListener("click", handleCancel);
-      cancelButton.addEventListener("click", handleCancel);
-
+      subscriptionButton.textContent = "Cancel";
+      subscriptionButton.removeEventListener("click", handleSubscribe);
+      subscriptionButton.addEventListener("click", handleCancel);
       console.log("Button changed to Cancel.");
     } catch (error) {
       console.error("Failed to subscribe:", error.message || error);
+      subscriptionButton.textContent = "Subscribe"; // Revert if failed
     }
   };
 
   const handleCancel = async () => {
-    try {
-      // Mock cancel logic
-      console.log("User cancelled subscription.");
+    // Show loading dots immediately
+    subscriptionButton.innerHTML = loadingDotsHTML;
 
-      // Optionally, clear the paidAt value or handle cancellation logic in Firestore
+    try {
+      console.log("User cancelled subscription.");
       const userDocRef = doc(db, "users", auth.currentUser.uid);
       await setDoc(
         userDocRef,
         {
-          paidAt: null, // Clear the paidAt timestamp
+          paidAt: null,
         },
         { merge: true }
       );
 
-      // Change the Cancel button back to Subscribe
-      buttonContainer.removeChild(cancelButton);
-      buttonContainer.appendChild(subscribeButton);
-
-      subscribeButton.removeEventListener("click", handleSubscribe);
-      subscribeButton.addEventListener("click", handleSubscribe);
-
+      subscriptionButton.textContent = "Subscribe";
+      subscriptionButton.removeEventListener("click", handleCancel);
+      subscriptionButton.addEventListener("click", handleSubscribe);
       console.log("Button changed back to Subscribe.");
     } catch (error) {
       console.error("Failed to cancel subscription:", error.message || error);
+      subscriptionButton.textContent = "Cancel"; // Revert if failed
     }
   };
 
-  // Check if the user is already signed in
   onAuthStateChanged(auth, async (user) => {
-    // Clear any existing buttons
-    buttonContainer.innerHTML = "";
-
     if (user) {
-      // User is signed in, show the logout button
-      buttonContainer.appendChild(logoutButton);
-      logoutButton.removeEventListener("click", handleLogout); // Prevent duplicate listeners
-      logoutButton.addEventListener("click", handleLogout);
+      authButton.textContent = "Logout";
+      authButton.removeEventListener("click", handleSignIn);
+      authButton.addEventListener("click", handleLogout);
 
-      // Fetch user data from Firestore
+      subscriptionButton.style.display = "inline-block";
+
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -158,26 +146,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const paidAt = userData.paidAt ? userData.paidAt.toDate() : null;
         const now = new Date();
 
-        // Determine which button to show based on paidAt
         if (!paidAt || now - paidAt > 30 * 24 * 60 * 60 * 1000) {
-          // Either paidAt is null or more than 30 days ago, show Subscribe button
-          buttonContainer.appendChild(subscribeButton);
+          subscriptionButton.textContent = "Subscribe";
+          subscriptionButton.removeEventListener("click", handleCancel);
+          subscriptionButton.addEventListener("click", handleSubscribe);
         } else {
-          // paidAt is less than 30 days ago, show Cancel button
-          buttonContainer.appendChild(cancelButton);
+          subscriptionButton.textContent = "Cancel";
+          subscriptionButton.removeEventListener("click", handleSubscribe);
+          subscriptionButton.addEventListener("click", handleCancel);
         }
-
-        subscribeButton.removeEventListener("click", handleSubscribe);
-        subscribeButton.addEventListener("click", handleSubscribe);
-
-        cancelButton.removeEventListener("click", handleCancel);
-        cancelButton.addEventListener("click", handleCancel);
       }
     } else {
-      // User is not signed in, show the login button
-      buttonContainer.appendChild(googleSigninButton);
-      googleSigninButton.removeEventListener("click", handleSignIn); // Prevent duplicate listeners
-      googleSigninButton.addEventListener("click", handleSignIn);
+      authButton.textContent = "Sign in with Google";
+      authButton.removeEventListener("click", handleLogout);
+      authButton.addEventListener("click", handleSignIn);
+
+      subscriptionButton.style.display = "none";
     }
   });
 });

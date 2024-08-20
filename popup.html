@@ -2,19 +2,7 @@
 <html>
   <head>
     <title>Zifty</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        width: 300px;
-        padding: 10px;
-      }
-      .content {
-        margin-top: 10px;
-      }
-      p {
-        font-size: large;
-      }
-    </style>
+    <link rel="stylesheet" href="./popup_styles.css">
   </head>
   <body>
     <div class="content">
@@ -33,7 +21,18 @@
       <p>&#x2615; <a href="https://buymeacoffee.com/timjdenq" target="_blank">Buy me a coffee</a></p>
       </p>
     </div>
-    <div id="button-container"></div>
+    <div id="button-container">
+      <button id="auth-button">
+        <span class="loading-dots">
+          <span>.</span><span>.</span><span>.</span>
+        </span>
+      </button>
+      <button id="subscription-button">
+        <span class="loading-dots">
+          <span>.</span><span>.</span><span>.</span>
+        </span>
+      </button>
+    </div>
     <script type="module" src="./popup.js"></script>
   </body>
 </html>
