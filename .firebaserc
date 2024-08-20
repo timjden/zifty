@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "zifty-4e74a"
+  },
+  "targets": {},
+  "etags": {
+    "zifty-4e74a": {
+      "extensionInstances": {}
+    }
+  },
+  "dataconnectEmulatorConfig": {}
+}

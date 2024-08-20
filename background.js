@@ -24,7 +24,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       };
       const body = JSON.stringify({ query: request.data.query });
       const response = await fetch(
-        "https://process-query-dzh3mkmyxq-uc.a.run.app",
+        "https://us-central1-zifty-4e74a.cloudfunctions.net/completion",
         {
           method: "POST",
           headers,
