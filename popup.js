@@ -166,6 +166,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } else {
       authButton.textContent = "Sign in with Google";
+      authButton.removeEventListener("click", handleLogout);
+      authButton.addEventListener("click", handleSignIn);
+
       subscriptionContainer.style.display = "none";
     }
   });
