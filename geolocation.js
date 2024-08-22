@@ -1,4 +1,4 @@
-const OFFSCREEN_DOCUMENT_PATH = "offscreen/offscreen.html";
+const OFFSCREEN_DOCUMENT_PATH = "./offscreen.html";
 let creating = null; // A global promise to avoid concurrency issues
 
 export async function getGeolocation() {
