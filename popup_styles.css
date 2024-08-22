@@ -5,9 +5,7 @@
   flex-direction: column;
   justify-content: space-between; /* Ensures the buttons are spaced out within the container */
   align-items: stretch; /* Makes the buttons fill the container's width */
-  gap: 10px;
-  margin: 0 auto;
-  border: 1px solid black;
+  text-align: center;
 }
 
 #auth-button,
@@ -16,7 +14,22 @@
   height: 50px; /* Each button will take up nearly half the container's height */
   width: 100%; /* Makes the buttons fill the container's width */
   box-sizing: border-box; /* Ensures padding/border are included in the width/height */
-  border: 1px solid red;
+}
+
+#subscription-message {
+  font-size: large;
+  height: 65px; /* Each button will take up nearly half the container's height */
+  width: 100%; /* Makes the buttons fill the container's width */
+  box-sizing: border-box; /* Ensures padding/border are included in the width/height */
+}
+
+#subscription-container {
+  display: flex;
+  height: 150px;
+  flex-direction: column;
+  align-items: stretch; /* Makes the buttons fill the container's width */
+  /* gap: 10px; */
+  text-align: center;
 }
 
 body {
@@ -29,7 +42,6 @@ body {
 }
 p {
   font-size: large;
-  border: 1px solid blue;
 }
 
 .loading-dots span {

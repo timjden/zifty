@@ -98,14 +98,17 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       subscriptionButton.textContent = "Cancel Subscription";
-      subscriptionMessage.style.display = "none";
+      subscriptionMessage.innerHTML =
+        'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
+      subscriptionMessage;
       subscriptionButton.removeEventListener("click", handleSubscribe);
       subscriptionButton.addEventListener("click", handleCancel);
       console.log("Button changed to Cancel.");
     } catch (error) {
       console.error("Failed to subscribe:", error.message || error);
       subscriptionButton.textContent = "Subscribe"; // Revert if failed
-      subscriptionMessage.style.display = "inline-block";
+      subscriptionMessage.textContent =
+        "Zifty is free to use with Amazon. Subscribe for $1/month to use Zifty with Google. Cancel anytime.";
     }
   };
 
@@ -125,14 +128,16 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       subscriptionButton.textContent = "Subscribe";
-      subscriptionMessage.style.display = "inline-block";
+      subscriptionMessage.textContent =
+        "Zifty is free to use with Amazon. Subscribe for $1/month to use Zifty with Google. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
       subscriptionButton.addEventListener("click", handleSubscribe);
       console.log("Button changed back to Subscribe.");
     } catch (error) {
       console.error("Failed to cancel subscription:", error.message || error);
       subscriptionButton.textContent = "Cancel Subscription"; // Revert if failed
-      subscriptionMessage.style.display = "none";
+      subscriptionMessage.innerHTML =
+        'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
     }
   };
 
@@ -154,12 +159,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!paidAt || now - paidAt > 30 * 24 * 60 * 60 * 1000) {
           subscriptionButton.textContent = "Subscribe";
-          subscriptionMessage.style.display = "inline-block";
+          subscriptionMessage.textContent =
+            "Zifty is free to use with Amazon. Subscribe for $1/month to use Zifty with Google. Cancel anytime.";
           subscriptionButton.removeEventListener("click", handleCancel);
           subscriptionButton.addEventListener("click", handleSubscribe);
         } else {
           subscriptionButton.textContent = "Cancel Subscription";
-          subscriptionMessage.style.display = "none";
+          subscriptionMessage.innerHTML =
+            'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
           subscriptionButton.removeEventListener("click", handleSubscribe);
           subscriptionButton.addEventListener("click", handleCancel);
         }

@@ -7,8 +7,8 @@
   <body>
     <div class="content">
       <p>
-        When you search for products on Amazon or Google, Zifty recommends
-        related secondhand products available near you.
+        When you search for products on Amazon or Google (subscribers only),
+        Zifty recommends related secondhand products available near you.
       </p>
       <p>
         Click
@@ -20,12 +20,12 @@
         to give it a try!
       </p>
 
-      <p>
+      <!-- <p>
         &#x2615;
         <a href="https://buymeacoffee.com/timjdenq" target="_blank"
           >Buy me a coffee</a
         >
-      </p>
+      </p> -->
     </div>
     <div id="button-container">
       <button id="auth-button">
@@ -35,8 +35,9 @@
       </button>
       <div id="subscription-container">
         <p id="subscription-message">
-          Zifty is free to use with Amazon. Subscribe for $1 per month to use
-          Zifty with Google. Cancel anytime.
+          <span class="loading-dots">
+            <span>.</span><span>.</span><span>.</span>
+          </span>
         </p>
         <button id="subscription-button">
           <span class="loading-dots">
