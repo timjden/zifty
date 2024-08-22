@@ -1,13 +1,7 @@
 import { logLocation } from "./geolocation.js";
 import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  signInWithCredential,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signOut,
-} from "firebase/auth";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDgWfdkRTROBGq2JjNzZmRVldgdr8iayLg",
