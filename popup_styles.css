@@ -1,20 +1,22 @@
 #button-container {
   width: 100%;
-  height: 100px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   justify-content: space-between; /* Ensures the buttons are spaced out within the container */
   align-items: stretch; /* Makes the buttons fill the container's width */
   gap: 10px;
   margin: 0 auto;
+  border: 1px solid black;
 }
 
 #auth-button,
 #subscription-button {
   font-size: medium;
-  height: 45%; /* Each button will take up nearly half the container's height */
+  height: 50px; /* Each button will take up nearly half the container's height */
   width: 100%; /* Makes the buttons fill the container's width */
   box-sizing: border-box; /* Ensures padding/border are included in the width/height */
+  border: 1px solid red;
 }
 
 body {
@@ -27,6 +29,7 @@ body {
 }
 p {
   font-size: large;
+  border: 1px solid blue;
 }
 
 .loading-dots span {
