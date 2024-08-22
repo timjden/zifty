@@ -37,8 +37,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // Show loading dots immediately
     authButton.innerHTML = loadingDotsHTML;
 
+    chrome.identity.clearAllCachedAuthTokens(function () {});
+
     chrome.identity.getAuthToken({ interactive: true }, async (token) => {
+      if (chrome.runtime.lastError || !token) {
+        // User closed the login screen or canceled the process
+        console.log(
+          "User canceled the sign-in process or closed the login window."
+        );
+        authButton.textContent = "Sign in with Google"; // Revert if canceled
+        port.disconnect(); // Disconnect the port to allow popup to close
+        return;
+      }
+
       const credential = GoogleAuthProvider.credential(null, token);
+
       try {
         const result = await signInWithCredential(auth, credential);
         const user = result.user;
@@ -53,6 +66,9 @@ document.addEventListener("DOMContentLoaded", () => {
             paidAt: null,
           });
           console.log("User added to Firestore:", user.uid);
+          authButton.textContent = "Logout";
+          authButton.removeEventListener("click", handleSignIn);
+          authButton.addEventListener("click", handleLogout);
         } else {
           console.log("User already exists in Firestore:", user.uid);
         }
