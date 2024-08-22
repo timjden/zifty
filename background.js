@@ -17,16 +17,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-chrome.runtime.onConnect.addListener(function (port) {
-  if (port.name === "keepPopupAlive") {
-    console.log("Popup connection opened.");
-
-    port.onDisconnect.addListener(function () {
-      console.log("Popup connection closed.");
-    });
-  }
-});
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Received message:", request);
   if (request.message === "isUserSubscribed") {
