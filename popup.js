@@ -46,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
           "User canceled the sign-in process or closed the login window."
         );
         authButton.textContent = "Sign in with Google"; // Revert if canceled
-        port.disconnect(); // Disconnect the port to allow popup to close
         return;
       }
 
@@ -91,6 +90,8 @@ document.addEventListener("DOMContentLoaded", () => {
     signOut(auth)
       .then(() => {
         console.log("User signed out successfully.");
+        authButton.textContent = "Sign in with Google"; // Update button text
+        subscriptionContainer.style.display = "none"; // Hide subscription UI
       })
       .catch((error) => {
         console.error("Sign out failed:", error.message || error);
