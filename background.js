@@ -1,6 +1,81 @@
 import { logLocation } from "./geolocation.js";
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  signInWithCredential,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 
-// console.log("Zifty background script is running.");
+const firebaseConfig = {
+  apiKey: "AIzaSyDgWfdkRTROBGq2JjNzZmRVldgdr8iayLg",
+  authDomain: "zifty-4e74a.firebaseapp.com",
+  projectId: "zifty-4e74a",
+  storageBucket: "zifty-4e74a.appspot.com",
+  messagingSenderId: "453820350601",
+  appId: "1:453820350601:web:26cc05e968085de657c658",
+  measurementId: "G-VEL4KBV88V",
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("Received message:", request);
+  if (request.message === "isUserSubscribed") {
+    console.log("Checking if user is subscribed...");
+    const user = auth.currentUser;
+    if (user) {
+      console.log("User:", user);
+      isUserSubscribed(user.uid).then((response) => {
+        console.log("User is subscribed:", response);
+        chrome.tabs.sendMessage(sender.tab.id, {
+          message: "isSubscribed",
+          isSubscribed: response,
+        });
+      });
+    } else {
+      console.log("User is not signed in.");
+      chrome.tabs.sendMessage(sender.tab.id, {
+        message: "isSubscribed",
+        isSubscribed: false,
+      });
+    }
+  }
+  return true;
+});
+
+async function isUserSubscribed(uid) {
+  try {
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const paidAt = userData.paidAt ? userData.paidAt.toDate() : null;
+      const now = new Date();
+
+      console.log("User Data:", userData);
+
+      if (paidAt && now - paidAt <= 30 * 24 * 60 * 60 * 1000) {
+        return true; // User is a subscriber
+      }
+    }
+
+    return false; // User is not a subscriber or subscription has expired
+  } catch (error) {
+    console.error(
+      "Failed to check subscription status:",
+      error.message || error
+    );
+    return false;
+  }
+}
+
+console.log("Zifty background script is running.");
 
 // Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {

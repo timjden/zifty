@@ -1,6 +1,28 @@
 // This content script will only run on pages with URLs as defined in the manifest.json
 console.log("Zifty has injected a content script into this page.");
 
+let isSubscribed = null;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForNotNull(variableAccessor, interval = 1000) {
+  while (variableAccessor() === null) {
+    console.log("Variable is still null. Sleeping...");
+    await sleep(interval); // sleep for the specified interval (default is 1 second)
+  }
+  console.log("Variable is no longer null. Proceeding...");
+}
+
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.message === "isSubscribed") {
+    console.log("Received subscription status from background");
+    console.log("isSubscribed:", request.isSubscribed);
+    isSubscribed = request.isSubscribed;
+  }
+});
+
 // But the overlay might stay appended to the page so remove it if the user navigates away
 if (!isSupportedSite()) {
   const overlay = document.getElementById("zifty-overlay");
@@ -17,8 +39,10 @@ let sendingSearchDetailsToBackground = false; // Flag to prevent multiple, concu
 let ziftyOverlay; // Holds the Zifty overlay element
 
 // When a page loads, send a message to the background script asking for the relevant listings
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
   console.log("Page loaded");
+  chrome.runtime.sendMessage({ message: "isUserSubscribed" });
+  waitForNotNull(() => isSubscribed);
   if (!isSupportedSite()) {
     console.log("This page is not supported by Zifty");
     return;
@@ -36,8 +60,10 @@ window.addEventListener("load", () => {
 });
 
 // ... OR when the URL changes (this info comes from background) send a message to the background script asking for the relevant listings
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === "URL changed") {
+    chrome.runtime.sendMessage({ message: "isUserSubscribed" });
+    waitForNotNull(() => isSubscribed);
     console.log("URL changed");
     if (!isSupportedSite()) {
       console.log("This page is not supported by Zifty");
@@ -151,12 +177,19 @@ function isSupportedSite() {
     /^www\.google\./.test(url.hostname) &&
     url.pathname === "/search" &&
     googleBuyPanelExists;
+  let result;
+  if (isSubscribed) {
+    console.log("User is subscribed. isSubscribed: ", isSubscribed);
+    // Return true if the user is on Amazon search results or a Google search page with product listings
+    result =
+      (/^www\.amazon\./.test(url.hostname) && url.pathname === "/s") ||
+      isGoogleSearchBuyPage;
+  } else {
+    console.log("User is not subscribed: isSubscribed: ", isSubscribed);
+    result = /^www\.amazon\./.test(url.hostname) && url.pathname === "/s";
+  }
 
-  // Return true if the user is on Amazon search results or a Google search page with product listings
-  return (
-    (/^www\.amazon\./.test(url.hostname) && url.pathname === "/s") ||
-    isGoogleSearchBuyPage
-  );
+  return result;
 }
 
 // The functions below are used to create the Zifty overlay DOM elements

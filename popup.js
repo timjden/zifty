@@ -149,34 +149,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
       subscriptionContainer.style.display = "inline-block";
 
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const isSubscribed = await isUserSubscribed(user.uid);
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const paidAt = userData.paidAt ? userData.paidAt.toDate() : null;
-        const now = new Date();
-
-        if (!paidAt || now - paidAt > 30 * 24 * 60 * 60 * 1000) {
-          subscriptionButton.textContent = "Subscribe";
-          subscriptionMessage.textContent =
-            "Zifty is free to use with Amazon. Subscribe for $1/month to use Zifty with Google. Cancel anytime.";
-          subscriptionButton.removeEventListener("click", handleCancel);
-          subscriptionButton.addEventListener("click", handleSubscribe);
-        } else {
-          subscriptionButton.textContent = "Cancel Subscription";
-          subscriptionMessage.innerHTML =
-            'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
-          subscriptionButton.removeEventListener("click", handleSubscribe);
-          subscriptionButton.addEventListener("click", handleCancel);
-        }
+      if (isSubscribed) {
+        subscriptionButton.textContent = "Cancel Subscription";
+        subscriptionMessage.innerHTML =
+          'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
+        subscriptionButton.removeEventListener("click", handleSubscribe);
+        subscriptionButton.addEventListener("click", handleCancel);
+      } else {
+        subscriptionButton.textContent = "Subscribe";
+        subscriptionMessage.textContent =
+          "Zifty is free to use with Amazon. Subscribe for $1/month to use Zifty with Google. Cancel anytime.";
+        subscriptionButton.removeEventListener("click", handleCancel);
+        subscriptionButton.addEventListener("click", handleSubscribe);
       }
     } else {
       authButton.textContent = "Sign in with Google";
-      authButton.removeEventListener("click", handleLogout);
-      authButton.addEventListener("click", handleSignIn);
-
       subscriptionContainer.style.display = "none";
     }
   });
 });
+
+async function isUserSubscribed(uid) {
+  try {
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const paidAt = userData.paidAt ? userData.paidAt.toDate() : null;
+      const now = new Date();
+
+      if (paidAt && now - paidAt <= 30 * 24 * 60 * 60 * 1000) {
+        return true; // User is a subscriber
+      }
+    }
+
+    return false; // User is not a subscriber or subscription has expired
+  } catch (error) {
+    console.error(
+      "Failed to check subscription status:",
+      error.message || error
+    );
+    return false;
+  }
+}
