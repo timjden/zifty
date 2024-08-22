@@ -17,6 +17,16 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+chrome.runtime.onConnect.addListener(function (port) {
+  if (port.name === "keepPopupAlive") {
+    console.log("Popup connection opened.");
+
+    port.onDisconnect.addListener(function () {
+      console.log("Popup connection closed.");
+    });
+  }
+});
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Received message:", request);
   if (request.message === "isUserSubscribed") {
@@ -26,17 +36,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log("User:", user);
       isUserSubscribed(user.uid).then((response) => {
         console.log("User is subscribed:", response);
-        chrome.tabs.sendMessage(sender.tab.id, {
-          message: "isSubscribed",
-          isSubscribed: response,
-        });
+        if (sender.tab) {
+          chrome.tabs.sendMessage(sender.tab.id, {
+            message: "isSubscribed",
+            isSubscribed: response,
+          });
+        }
       });
     } else {
       console.log("User is not signed in.");
-      chrome.tabs.sendMessage(sender.tab.id, {
-        message: "isSubscribed",
-        isSubscribed: false,
-      });
+      if (sender.tab) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          message: "isSubscribed",
+          isSubscribed: false,
+        });
+      }
     }
   }
   return true;
