@@ -9,10 +9,10 @@ function sleep(ms) {
 
 async function waitForNotNull(variableAccessor, interval = 1000) {
   while (variableAccessor() === null) {
-    console.log("Variable is still null. Sleeping...");
+    console.log("isSubscribed :", isSubscribed);
     await sleep(interval); // sleep for the specified interval (default is 1 second)
   }
-  console.log("Variable is no longer null. Proceeding...");
+  console.log("Got subscription status");
 }
 
 chrome.runtime.onMessage.addListener((request) => {
@@ -42,7 +42,7 @@ let ziftyOverlay; // Holds the Zifty overlay element
 window.addEventListener("load", async () => {
   console.log("Page loaded");
   chrome.runtime.sendMessage({ message: "isUserSubscribed" });
-  waitForNotNull(() => isSubscribed);
+  await waitForNotNull(() => isSubscribed);
   if (!isSupportedSite()) {
     console.log("This page is not supported by Zifty");
     return;
@@ -50,6 +50,13 @@ window.addEventListener("load", async () => {
 
   if (!sendingSearchDetailsToBackground) {
     const searchDetails = getSearchDetails();
+
+    // If the search query is the same as the previous search query (e.g. URL changes due to pagination), return
+    if (searchDetails.query === currentSearchDetails.query) {
+      console.log("Search details are the same as before, returning");
+      return;
+    }
+
     currentSearchDetails = sendSearchDetailsToBackground(searchDetails); // Sends search details to background
   } else {
     return;
@@ -63,7 +70,7 @@ window.addEventListener("load", async () => {
 chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === "URL changed") {
     chrome.runtime.sendMessage({ message: "isUserSubscribed" });
-    waitForNotNull(() => isSubscribed);
+    await waitForNotNull(() => isSubscribed);
     console.log("URL changed");
     if (!isSupportedSite()) {
       console.log("This page is not supported by Zifty");
@@ -178,14 +185,13 @@ function isSupportedSite() {
     url.pathname === "/search" &&
     googleBuyPanelExists;
   let result;
+  console.log("isSubscribed:", isSubscribed);
   if (isSubscribed) {
-    console.log("User is subscribed. isSubscribed: ", isSubscribed);
     // Return true if the user is on Amazon search results or a Google search page with product listings
     result =
       (/^www\.amazon\./.test(url.hostname) && url.pathname === "/s") ||
       isGoogleSearchBuyPage;
   } else {
-    console.log("User is not subscribed: isSubscribed: ", isSubscribed);
     result = /^www\.amazon\./.test(url.hostname) && url.pathname === "/s";
   }
 
