@@ -25,6 +25,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const authButton = document.getElementById("auth-button");
+const subscriptionContainer = document.getElementById("subscription-container");
+const subscriptionMessage = document.getElementById("subscription-message");
 const subscriptionButton = document.getElementById("subscription-button");
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -95,13 +97,15 @@ document.addEventListener("DOMContentLoaded", () => {
         { merge: true }
       );
 
-      subscriptionButton.textContent = "Cancel";
+      subscriptionButton.textContent = "Cancel Subscription";
+      subscriptionMessage.style.display = "none";
       subscriptionButton.removeEventListener("click", handleSubscribe);
       subscriptionButton.addEventListener("click", handleCancel);
       console.log("Button changed to Cancel.");
     } catch (error) {
       console.error("Failed to subscribe:", error.message || error);
       subscriptionButton.textContent = "Subscribe"; // Revert if failed
+      subscriptionMessage.style.display = "inline-block";
     }
   };
 
@@ -121,12 +125,14 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       subscriptionButton.textContent = "Subscribe";
+      subscriptionMessage.style.display = "inline-block";
       subscriptionButton.removeEventListener("click", handleCancel);
       subscriptionButton.addEventListener("click", handleSubscribe);
       console.log("Button changed back to Subscribe.");
     } catch (error) {
       console.error("Failed to cancel subscription:", error.message || error);
-      subscriptionButton.textContent = "Cancel"; // Revert if failed
+      subscriptionButton.textContent = "Cancel Subscription"; // Revert if failed
+      subscriptionMessage.style.display = "none";
     }
   };
 
@@ -136,7 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
       authButton.removeEventListener("click", handleSignIn);
       authButton.addEventListener("click", handleLogout);
 
-      subscriptionButton.style.display = "inline-block";
+      subscriptionContainer.style.display = "inline-block";
 
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
@@ -148,10 +154,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!paidAt || now - paidAt > 30 * 24 * 60 * 60 * 1000) {
           subscriptionButton.textContent = "Subscribe";
+          subscriptionMessage.style.display = "inline-block";
           subscriptionButton.removeEventListener("click", handleCancel);
           subscriptionButton.addEventListener("click", handleSubscribe);
         } else {
-          subscriptionButton.textContent = "Cancel";
+          subscriptionButton.textContent = "Cancel Subscription";
+          subscriptionMessage.style.display = "none";
           subscriptionButton.removeEventListener("click", handleSubscribe);
           subscriptionButton.addEventListener("click", handleCancel);
         }
@@ -161,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
       authButton.removeEventListener("click", handleLogout);
       authButton.addEventListener("click", handleSignIn);
 
-      subscriptionButton.style.display = "none";
+      subscriptionContainer.style.display = "none";
     }
   });
 });
