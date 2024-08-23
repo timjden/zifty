@@ -7,6 +7,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 console.log("Popup popped up!");
 
@@ -23,6 +24,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app); // Initialize Firebase Functions
 
 const authButton = document.getElementById("auth-button");
 const subscriptionContainer = document.getElementById("subscription-container");
@@ -144,34 +146,55 @@ document.addEventListener("DOMContentLoaded", () => {
     subscriptionButton.innerHTML = loadingDotsHTML;
 
     try {
-      console.log("User cancelled subscription.");
+      // Get the user's document reference
       const userDocRef = doc(db, "users", auth.currentUser.uid);
-      await setDoc(
-        userDocRef,
-        {
-          cancelledAt: formatDateToCustomISOString(new Date()),
-        },
-        { merge: true }
-      );
 
-      const cancelSubscription = firebase
-        .functions()
-        .httpsCallable("cancelSubscription");
+      // Retrieve the user's document from Firestore
+      const userDoc = await getDoc(userDocRef);
 
-      cancelSubscription({ subscriptionId: "your-subscription-id" })
-        .then((result) => {
-          console.log(result.data);
-        })
-        .catch((error) => {
-          console.error("Error canceling subscription:", error.message);
-        });
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const subscriptionId = userData.subscriptionId;
 
-      subscriptionButton.textContent = "💳 Subscribe";
-      subscriptionMessage.textContent =
-        "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
-      subscriptionButton.removeEventListener("click", handleCancel);
-      subscriptionButton.addEventListener("click", handleSubscribe);
-      console.log("Button changed back to Subscribe.");
+        if (!subscriptionId) {
+          throw new Error("No subscription ID found for this user.");
+        }
+
+        // Call the cancelSubscription function using Firebase Functions
+        const cancelSubscription = httpsCallable(
+          functions,
+          "cancelSubscription"
+        );
+
+        await cancelSubscription({ subscriptionId })
+          .then((result) => {
+            console.log("Subscription canceled:", result.data);
+          })
+          .catch((error) => {
+            console.error("Error canceling subscription:", error.message);
+            throw new Error("Failed to cancel the subscription.");
+          });
+
+        // Update the user's document with the cancellation date
+        await setDoc(
+          userDocRef,
+          {
+            cancelledAt: formatDateToCustomISOString(new Date()),
+          },
+          { merge: true }
+        );
+
+        // Update the UI to reflect the subscription status
+        subscriptionButton.textContent = "💳 Subscribe";
+        subscriptionMessage.textContent =
+          "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
+        subscriptionButton.removeEventListener("click", handleCancel);
+        subscriptionButton.addEventListener("click", handleSubscribe);
+
+        console.log("Button changed back to Subscribe.");
+      } else {
+        throw new Error("User document does not exist.");
+      }
     } catch (error) {
       console.error("Failed to cancel subscription:", error.message || error);
       subscriptionButton.textContent = "Cancel Subscription 😔"; // Revert if failed
