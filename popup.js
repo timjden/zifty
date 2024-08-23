@@ -141,6 +141,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  const handleRenew = async () => {
+    console.log("Renewing subscription...");
+    console.log("Add logic here to renew the subscription.");
+  };
+
   const handleCancel = async () => {
     // Show loading dots immediately
     subscriptionButton.innerHTML = loadingDotsHTML;
@@ -214,11 +219,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const isSubscribed = await isUserSubscribed(user.uid);
 
       if (isSubscribed) {
-        subscriptionButton.textContent = "Cancel Subscription 😔";
-        subscriptionMessage.innerHTML =
-          'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
-        subscriptionButton.removeEventListener("click", handleSubscribe);
-        subscriptionButton.addEventListener("click", handleCancel);
+        const isCancelled = await isUserCancelled(user.uid);
+        if (isCancelled) {
+          subscriptionButton.textContent = "Renew Subscription";
+          subscriptionMessage.innerHTML =
+            "Your subscription has been cancelled and will expire soon.";
+          subscriptionButton.removeEventListener("click", handleSubscribe);
+          subscriptionButton.addEventListener("click", handleRenew);
+        } else {
+          subscriptionButton.textContent = "Cancel Subscription 😔";
+          subscriptionMessage.innerHTML =
+            'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
+          subscriptionButton.removeEventListener("click", handleSubscribe);
+          subscriptionButton.addEventListener("click", handleCancel);
+        }
       } else {
         subscriptionButton.textContent = "💳 Subscribe";
         subscriptionMessage.textContent =
@@ -245,31 +259,48 @@ async function isUserSubscribed(uid) {
     if (userDoc.exists()) {
       console.log("User exists in Firestore:", uid);
       const userData = userDoc.data();
-      let paidAt = userData.paidAt;
+      const status = userData.status;
 
-      // Check if paidAt is a Firestore Timestamp
-      if (paidAt && typeof paidAt.toDate === "function") {
-        paidAt = paidAt.toDate(); // Convert Firestore Timestamp to Date
-      } else if (typeof paidAt === "string" || paidAt instanceof String) {
-        paidAt = new Date(paidAt); // Convert string to Date
-      }
+      console.log("Subscription status:", status);
 
-      console.log("Paid at:", paidAt);
-      const now = new Date();
-
-      // Check if paidAt is within the last 30 days
-      if (
-        paidAt &&
-        now.getTime() - paidAt.getTime() <= 30 * 24 * 60 * 60 * 1000
-      ) {
+      if (status === "active" || status === "cancelled") {
         return true; // User is a subscriber
+      } else if (status === "expired") {
+        return false; // User is not a subscriber
       }
     }
 
-    return false; // User is not a subscriber or subscription has expired
+    return false; // User does not exist or no status field
   } catch (error) {
     console.error(
       "Failed to check subscription status:",
+      error.message || error
+    );
+    return false;
+  }
+}
+
+async function isUserCancelled(uid) {
+  try {
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      console.log("User exists in Firestore:", uid);
+      const userData = userDoc.data();
+      const status = userData.status;
+
+      console.log("Subscription status:", status);
+
+      if (status === "cancelled") {
+        return true; // User has cancelled their subscription
+      }
+    }
+
+    return false; // User has not cancelled or does not exist
+  } catch (error) {
+    console.error(
+      "Failed to check cancellation status:",
       error.message || error
     );
     return false;

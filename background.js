@@ -54,28 +54,18 @@ async function isUserSubscribed(uid) {
     if (userDoc.exists()) {
       console.log("User exists in Firestore:", uid);
       const userData = userDoc.data();
-      let paidAt = userData.paidAt;
+      const status = userData.status;
 
-      // Check if paidAt is a Firestore Timestamp
-      if (paidAt && typeof paidAt.toDate === "function") {
-        paidAt = paidAt.toDate(); // Convert Firestore Timestamp to Date
-      } else if (typeof paidAt === "string" || paidAt instanceof String) {
-        paidAt = new Date(paidAt); // Convert string to Date
-      }
+      console.log("Subscription status:", status);
 
-      console.log("Paid at:", paidAt);
-      const now = new Date();
-
-      // Check if paidAt is within the last 30 days
-      if (
-        paidAt &&
-        now.getTime() - paidAt.getTime() <= 30 * 24 * 60 * 60 * 1000
-      ) {
+      if (status === "active" || status === "cancelled") {
         return true; // User is a subscriber
+      } else if (status === "expired") {
+        return false; // User is not a subscriber
       }
     }
 
-    return false; // User is not a subscriber or subscription has expired
+    return false; // User does not exist or no status field
   } catch (error) {
     console.error(
       "Failed to check subscription status:",
