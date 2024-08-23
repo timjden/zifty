@@ -17,64 +17,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log("Received message:", request);
-  if (request.message === "isUserSubscribed") {
-    console.log("Checking if user is subscribed...");
-    const user = auth.currentUser;
-    if (user) {
-      console.log("User:", user);
-      isUserSubscribed(user.uid).then((response) => {
-        console.log("User is subscribed:", response);
-        if (sender.tab) {
-          chrome.tabs.sendMessage(sender.tab.id, {
-            message: "isSubscribed",
-            isSubscribed: response,
-          });
-        }
-      });
-    } else {
-      console.log("User is not signed in.");
-      if (sender.tab) {
-        chrome.tabs.sendMessage(sender.tab.id, {
-          message: "isSubscribed",
-          isSubscribed: false,
-        });
-      }
-    }
-  }
-  return true;
-});
-
-async function isUserSubscribed(uid) {
-  try {
-    const userDocRef = doc(db, "users", uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      console.log("User exists in Firestore:", uid);
-      const userData = userDoc.data();
-      const status = userData.status;
-
-      console.log("Subscription status:", status);
-
-      if (status === "active" || status === "cancelled") {
-        return true; // User is a subscriber
-      } else if (status === "expired") {
-        return false; // User is not a subscriber
-      }
-    }
-
-    return false; // User does not exist or no status field
-  } catch (error) {
-    console.error(
-      "Failed to check subscription status:",
-      error.message || error
-    );
-    return false;
-  }
-}
-
 console.log("Zifty background script is running.");
 
 // Send a message to content script if the URL changes
@@ -126,6 +68,29 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       query: request.data.query,
       data: fbListings,
     });
+  } else if (request.message === "isUserSubscribed") {
+    console.log("Checking if user is subscribed...");
+    const user = auth.currentUser;
+    if (user) {
+      console.log("User:", user);
+      isUserSubscribed(user.uid).then((response) => {
+        console.log("User is subscribed:", response);
+        if (sender.tab) {
+          chrome.tabs.sendMessage(sender.tab.id, {
+            message: "isSubscribed",
+            isSubscribed: response,
+          });
+        }
+      });
+    } else {
+      console.log("User is not signed in.");
+      if (sender.tab) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          message: "isSubscribed",
+          isSubscribed: false,
+        });
+      }
+    }
   }
   return true;
 });
@@ -226,6 +191,62 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   }
 }
 
+async function isUserSubscribed(uid) {
+  try {
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      console.log("User exists in Firestore:", uid);
+      const userData = userDoc.data();
+      const status = userData.status;
+
+      console.log("Subscription status:", status);
+
+      if (status === "active" || status === "cancelled") {
+        return true; // User is a subscriber
+      } else if (status === "expired") {
+        return false; // User is not a subscriber
+      }
+    }
+
+    return false; // User does not exist or no status field
+  } catch (error) {
+    console.error(
+      "Failed to check subscription status:",
+      error.message || error
+    );
+    return false;
+  }
+}
+
+async function isUserCancelled(uid) {
+  try {
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      console.log("User exists in Firestore:", uid);
+      const userData = userDoc.data();
+      const status = userData.status;
+
+      console.log("Subscription status:", status);
+
+      if (status === "cancelled") {
+        return true; // User has cancelled their subscription
+      }
+    }
+
+    return false; // User has not cancelled or does not exist
+  } catch (error) {
+    console.error(
+      "Failed to check cancellation status:",
+      error.message || error
+    );
+    return false;
+  }
+}
+
 function convertCurrencyCode(price) {
   let formattedPrice = price;
 
@@ -236,4 +257,4 @@ function convertCurrencyCode(price) {
   return formattedPrice;
 }
 
-export { fetchFromFacebookMarketplace }; // Export this for testing
+export { fetchFromFacebookMarketplace, isUserSubscribed, isUserCancelled }; // Export this for testing
