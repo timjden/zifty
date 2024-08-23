@@ -1,6 +1,10 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
+require("dotenv").config(); // Load environment variables from .env file
+
+// Get the API key from the .env file
+const LEMON_SQUEEZY_API_KEY = process.env.LEMON_SQUEEZY_API_KEY;
 
 // Initialize the Firebase Admin SDK
 admin.initializeApp();
@@ -70,6 +74,9 @@ exports.handleLemonSqueezyWebhook = functions.https.onRequest(
       if (event === "subscription_payment_success") {
         const userEmail = body.data.attributes.user_email;
         const paymentDate = body.data.attributes.created_at;
+        const subscriptionId = body.data.attributes.subscription_id;
+        const customerId = body.data.attributes.customer_id;
+        const status = body.data.attributes.status;
 
         console.log("User email");
         console.log(userEmail);
@@ -95,6 +102,9 @@ exports.handleLemonSqueezyWebhook = functions.https.onRequest(
           await userDocRef.set(
               {
                 paidAt: paymentDate,
+                subscriptionId: subscriptionId,
+                customerId: customerId,
+                status: status,
               },
               {merge: true},
           );
@@ -111,3 +121,60 @@ exports.handleLemonSqueezyWebhook = functions.https.onRequest(
       }
     },
 );
+
+exports.cancelSubscription = functions.https.onCall(async (data, context) => {
+  console.log("Called cancelSubscription");
+  // Check if the user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+        "unauthenticated",
+        "User must be authenticated to cancel a subscription.",
+    );
+  }
+
+  const {subscriptionId} = data;
+
+  console.log("Subscription ID");
+  console.log(subscriptionId);
+
+  if (!subscriptionId) {
+    throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Subscription ID is required.",
+    );
+  }
+
+  try {
+    const response = await axios.delete(
+        `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`,
+        {
+          headers: {
+            "Accept": "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+            "Authorization": `Bearer ${LEMON_SQUEEZY_API_KEY}`,
+          },
+        },
+    );
+
+    console.log("Subscription cancelled successfully.");
+
+    return {
+      success: true,
+      message: "Subscription cancelled successfully.",
+      data: response.data,
+    };
+  } catch (error) {
+    // Handle errors
+    if (error.response) {
+      throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Failed to cancel subscription: ${error.response.data.message}`,
+      );
+    } else {
+      throw new functions.https.HttpsError(
+          "unknown",
+          `Unknown error occurred: ${error.message}`,
+      );
+    }
+  }
+});
