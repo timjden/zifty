@@ -133,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // No need to update Firestore here, as it will be handled by the webhook
     } catch (error) {
       console.error("Failed to subscribe:", error.message || error);
-      subscriptionButton.textContent = "Subscribe"; // Revert if failed
+      subscriptionButton.textContent = "💳 Subscribe"; // Revert if failed
       subscriptionMessage.textContent =
         "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
     }
@@ -154,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
         { merge: true }
       );
 
-      subscriptionButton.textContent = "Subscribe";
+      subscriptionButton.textContent = "💳 Subscribe";
       subscriptionMessage.textContent =
         "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Button changed back to Subscribe.");
     } catch (error) {
       console.error("Failed to cancel subscription:", error.message || error);
-      subscriptionButton.textContent = "Cancel Subscription"; // Revert if failed
+      subscriptionButton.textContent = "Cancel Subscription 😔"; // Revert if failed
       subscriptionMessage.innerHTML =
         'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
     }
@@ -179,13 +179,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const isSubscribed = await isUserSubscribed(user.uid);
 
       if (isSubscribed) {
-        subscriptionButton.textContent = "Cancel Subscription";
+        subscriptionButton.textContent = "Cancel Subscription 😔";
         subscriptionMessage.innerHTML =
           'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
         subscriptionButton.removeEventListener("click", handleSubscribe);
         subscriptionButton.addEventListener("click", handleCancel);
       } else {
-        subscriptionButton.textContent = "Subscribe";
+        subscriptionButton.textContent = "💳 Subscribe";
         subscriptionMessage.textContent =
           "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
         subscriptionButton.removeEventListener("click", handleCancel);
