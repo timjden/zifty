@@ -8,8 +8,7 @@ import {
 } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
-
-console.log("Popup popped up!");
+import { isUserSubscribed, isUserCancelled } from "./background.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDgWfdkRTROBGq2JjNzZmRVldgdr8iayLg",
@@ -24,7 +23,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const functions = getFunctions(app); // Initialize Firebase Functions
+const functions = getFunctions(app);
 
 const authButton = document.getElementById("auth-button");
 const subscriptionContainer = document.getElementById("subscription-container");
@@ -36,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
     '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
 
   const handleSignIn = () => {
-    // Show loading dots immediately
     authButton.innerHTML = loadingDotsHTML;
 
     chrome.identity.clearAllCachedAuthTokens(function () {});
@@ -61,35 +59,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const userDoc = await getDoc(userDocRef);
 
-        // Save the user email to Firestore
+        // Save the user to Firestore
         if (!userDoc.exists()) {
           await setDoc(userDocRef, {
             uid: user.uid,
-            email: user.email, // Add the email here
+            email: user.email,
             paidAt: null,
             cancelledAt: null,
           });
           console.log("User added to Firestore:", user.uid);
-        } else {
-          // If the document exists, ensure the email is up-to-date
-          await setDoc(
-            userDocRef,
-            {
-              email: user.email, // Update email if necessary
-            },
-            { merge: true }
-          );
-          console.log(
-            "User already exists in Firestore, email updated:",
-            user.uid
-          );
         }
 
         authButton.textContent = "Logout";
         authButton.removeEventListener("click", handleSignIn);
         authButton.addEventListener("click", handleLogout);
-
-        console.log("User signed in successfully:", user);
       } catch (error) {
         console.error(
           "Firebase Google Sign-In failed:",
@@ -102,7 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const handleLogout = () => {
-    // Show loading dots immediately
     authButton.innerHTML = loadingDotsHTML;
 
     signOut(auth)
@@ -119,20 +101,15 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const handleSubscribe = async () => {
-    // Show loading dots immediately
     subscriptionButton.innerHTML = loadingDotsHTML;
 
     try {
       console.log("Redirecting to payment page...");
-
-      // Open a new tab with the Lemon Squeezy subscription link
       chrome.tabs.create({
         url:
           "https://zifty.lemonsqueezy.com/buy/108ac084-c9a0-4c10-bd31-0a2f4552c7bf?userId=" +
           auth.currentUser.uid,
       });
-
-      // No need to update Firestore here, as it will be handled by the webhook
     } catch (error) {
       console.error("Failed to subscribe:", error.message || error);
       subscriptionButton.textContent = "💳 Subscribe"; // Revert if failed
@@ -141,22 +118,59 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const handleRenew = async () => {
-    console.log("Renewing subscription...");
-    console.log("Add logic here to renew the subscription.");
-  };
-
-  const handleCancel = async () => {
-    // Show loading dots immediately
+  const handleResume = async () => {
     subscriptionButton.innerHTML = loadingDotsHTML;
 
     try {
-      // Get the user's document reference
       const userDocRef = doc(db, "users", auth.currentUser.uid);
-
-      // Retrieve the user's document from Firestore
       const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const subscriptionId = userData.subscriptionId;
 
+        if (!subscriptionId) {
+          throw new Error("No subscription ID found for this user.");
+        }
+
+        // Call the resumeSubscription function using Firebase Functions
+        // This Firebase Function will call the Lemon Squeezy API to resume the subscription, and update the user's document in Firestore
+        const resumeSubscription = httpsCallable(
+          functions,
+          "resumeSubscription"
+        );
+
+        await resumeSubscription({ subscriptionId })
+          .then((result) => {
+            console.log("Subscription resumed:", result.data);
+          })
+          .catch((error) => {
+            console.error("Error resuming subscription:", error.message);
+            throw new Error("Failed to resume the subscription.");
+          });
+
+        // Update the UI to reflect the subscription status
+        subscriptionButton.textContent = "Cancel Subscription";
+        subscriptionMessage.innerHTML =
+          'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
+        subscriptionButton.removeEventListener("click", handleResume);
+        subscriptionButton.addEventListener("click", handleCancel);
+      } else {
+        throw new Error("User document does not exist.");
+      }
+    } catch (error) {
+      console.error("Failed to resume subscription:", error.message || error);
+      subscriptionButton.textContent = "Resume Subscription"; // Revert if failed
+      subscriptionMessage.innerHTML =
+        "Your subscription has been cancelled and will expire soon.";
+    }
+  };
+
+  const handleCancel = async () => {
+    subscriptionButton.innerHTML = loadingDotsHTML;
+
+    try {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
         const userData = userDoc.data();
         const subscriptionId = userData.subscriptionId;
@@ -166,6 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Call the cancelSubscription function using Firebase Functions
+        // This Firebase Function will call the Lemon Squeezy API to cancel the subscription, and update the user's document in Firestore
         const cancelSubscription = httpsCallable(
           functions,
           "cancelSubscription"
@@ -180,23 +195,12 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error("Failed to cancel the subscription.");
           });
 
-        // Update the user's document with the cancellation date
-        await setDoc(
-          userDocRef,
-          {
-            cancelledAt: formatDateToCustomISOString(new Date()),
-          },
-          { merge: true }
-        );
-
         // Update the UI to reflect the subscription status
-        subscriptionButton.textContent = "💳 Subscribe";
-        subscriptionMessage.textContent =
-          "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
+        subscriptionButton.textContent = "Resume Subscription";
+        subscriptionMessage.innerHTML =
+          "Your subscription has been cancelled and will expire soon.";
         subscriptionButton.removeEventListener("click", handleCancel);
-        subscriptionButton.addEventListener("click", handleSubscribe);
-
-        console.log("Button changed back to Subscribe.");
+        subscriptionButton.addEventListener("click", handleResume);
       } else {
         throw new Error("User document does not exist.");
       }
@@ -210,22 +214,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   onAuthStateChanged(auth, async (user) => {
     if (user) {
+      // If a user is signed in change the functionality of the button to logout
+      // If the user is not signed in, change the functionality of the button to sign in
       authButton.textContent = "Logout";
       authButton.removeEventListener("click", handleSignIn);
       authButton.addEventListener("click", handleLogout);
 
       subscriptionContainer.style.display = "inline-block";
 
+      // Then check if that user is subscribed
       const isSubscribed = await isUserSubscribed(user.uid);
 
       if (isSubscribed) {
         const isCancelled = await isUserCancelled(user.uid);
+        // If the user is subscribed but has cancelled, show the renew button, otherwise show the cancel button
+        // If the user is not subscribed, show the subscribe button
         if (isCancelled) {
-          subscriptionButton.textContent = "Renew Subscription";
+          subscriptionButton.textContent = "Resume Subscription";
           subscriptionMessage.innerHTML =
             "Your subscription has been cancelled and will expire soon.";
           subscriptionButton.removeEventListener("click", handleSubscribe);
-          subscriptionButton.addEventListener("click", handleRenew);
+          subscriptionButton.addEventListener("click", handleResume);
         } else {
           subscriptionButton.textContent = "Cancel Subscription 😔";
           subscriptionMessage.innerHTML =
@@ -238,6 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
         subscriptionMessage.textContent =
           "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
         subscriptionButton.removeEventListener("click", handleCancel);
+        subscriptionButton.removeEventListener("click", handleResume);
         subscriptionButton.addEventListener("click", handleSubscribe);
       }
     } else {
@@ -250,75 +260,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-async function isUserSubscribed(uid) {
-  try {
-    const userDocRef = doc(db, "users", uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      console.log("User exists in Firestore:", uid);
-      const userData = userDoc.data();
-      const status = userData.status;
-
-      console.log("Subscription status:", status);
-
-      if (status === "active" || status === "cancelled") {
-        return true; // User is a subscriber
-      } else if (status === "expired") {
-        return false; // User is not a subscriber
-      }
-    }
-
-    return false; // User does not exist or no status field
-  } catch (error) {
-    console.error(
-      "Failed to check subscription status:",
-      error.message || error
-    );
-    return false;
-  }
-}
-
-async function isUserCancelled(uid) {
-  try {
-    const userDocRef = doc(db, "users", uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      console.log("User exists in Firestore:", uid);
-      const userData = userDoc.data();
-      const status = userData.status;
-
-      console.log("Subscription status:", status);
-
-      if (status === "cancelled") {
-        return true; // User has cancelled their subscription
-      }
-    }
-
-    return false; // User has not cancelled or does not exist
-  } catch (error) {
-    console.error(
-      "Failed to check cancellation status:",
-      error.message || error
-    );
-    return false;
-  }
-}
-
-function formatDateToCustomISOString(date) {
-  // Get the ISO string without milliseconds
-  let isoString = date.toISOString().split(".")[0];
-
-  // Add microseconds
-  let microseconds = "000000";
-
-  // Construct the final string with microseconds and 'Z'
-  let formattedDate = `${isoString}.${microseconds}Z`;
-
-  return formattedDate;
-}
-
-let formattedDate = formatDateToCustomISOString(new Date());
-console.log(formattedDate);
