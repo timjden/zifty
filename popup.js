@@ -29,6 +29,7 @@ const authButton = document.getElementById("auth-button");
 const subscriptionContainer = document.getElementById("subscription-container");
 const subscriptionMessage = document.getElementById("subscription-message");
 const subscriptionButton = document.getElementById("subscription-button");
+const signUpMessage = document.getElementById("signup-message");
 
 document.addEventListener("DOMContentLoaded", () => {
   const loadingDotsHTML =
@@ -221,6 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
       authButton.addEventListener("click", handleLogout);
 
       subscriptionContainer.style.display = "inline-block";
+      signUpMessage.textContent = "";
 
       // Then check if that user is subscribed
       const isSubscribed = await isUserSubscribed(user.uid);
@@ -256,6 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
       authButton.removeEventListener("click", handleLogout);
       authButton.addEventListener("click", handleSignIn);
 
+      signUpMessage.textContent =
+        "Sign up and subscribe to access premium features!";
       subscriptionContainer.style.display = "none";
     }
   });
