@@ -58,19 +58,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const userDoc = await getDoc(userDocRef);
 
+        // Save the user email to Firestore
         if (!userDoc.exists()) {
           await setDoc(userDocRef, {
             uid: user.uid,
-            email: user.email,
+            email: user.email, // Add the email here
             paidAt: null,
           });
           console.log("User added to Firestore:", user.uid);
-          authButton.textContent = "Logout";
-          authButton.removeEventListener("click", handleSignIn);
-          authButton.addEventListener("click", handleLogout);
         } else {
-          console.log("User already exists in Firestore:", user.uid);
+          // If the document exists, ensure the email is up-to-date
+          await setDoc(
+            userDocRef,
+            {
+              email: user.email, // Update email if necessary
+            },
+            { merge: true }
+          );
+          console.log(
+            "User already exists in Firestore, email updated:",
+            user.uid
+          );
         }
+
+        authButton.textContent = "Logout";
+        authButton.removeEventListener("click", handleSignIn);
+        authButton.addEventListener("click", handleLogout);
 
         console.log("User signed in successfully:", user);
       } catch (error) {
@@ -104,28 +117,21 @@ document.addEventListener("DOMContentLoaded", () => {
     subscriptionButton.innerHTML = loadingDotsHTML;
 
     try {
-      console.log("User subscribed.");
-      const userDocRef = doc(db, "users", auth.currentUser.uid);
-      await setDoc(
-        userDocRef,
-        {
-          paidAt: new Date(),
-        },
-        { merge: true }
-      );
+      console.log("Redirecting to payment page...");
 
-      subscriptionButton.textContent = "Cancel Subscription";
-      subscriptionMessage.innerHTML =
-        'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
-      subscriptionMessage;
-      subscriptionButton.removeEventListener("click", handleSubscribe);
-      subscriptionButton.addEventListener("click", handleCancel);
-      console.log("Button changed to Cancel.");
+      // Open a new tab with the Lemon Squeezy subscription link
+      chrome.tabs.create({
+        url:
+          "https://zifty.lemonsqueezy.com/buy/108ac084-c9a0-4c10-bd31-0a2f4552c7bf?userId=" +
+          auth.currentUser.uid,
+      });
+
+      // No need to update Firestore here, as it will be handled by the webhook
     } catch (error) {
       console.error("Failed to subscribe:", error.message || error);
       subscriptionButton.textContent = "Subscribe"; // Revert if failed
       subscriptionMessage.textContent =
-        "Zifty is free to use with Amazon. Subscribe for $1/month to use Zifty with Google. Cancel anytime.";
+        "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
     }
   };
 
@@ -146,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       subscriptionButton.textContent = "Subscribe";
       subscriptionMessage.textContent =
-        "Zifty is free to use with Amazon. Subscribe for $1/month to use Zifty with Google. Cancel anytime.";
+        "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
       subscriptionButton.addEventListener("click", handleSubscribe);
       console.log("Button changed back to Subscribe.");
@@ -177,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         subscriptionButton.textContent = "Subscribe";
         subscriptionMessage.textContent =
-          "Zifty is free to use with Amazon. Subscribe for $1/month to use Zifty with Google. Cancel anytime.";
+          "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
         subscriptionButton.removeEventListener("click", handleCancel);
         subscriptionButton.addEventListener("click", handleSubscribe);
       }
@@ -197,11 +203,25 @@ async function isUserSubscribed(uid) {
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
+      console.log("User exists in Firestore:", uid);
       const userData = userDoc.data();
-      const paidAt = userData.paidAt ? userData.paidAt.toDate() : null;
+      let paidAt = userData.paidAt;
+
+      // Check if paidAt is a Firestore Timestamp
+      if (paidAt && typeof paidAt.toDate === "function") {
+        paidAt = paidAt.toDate(); // Convert Firestore Timestamp to Date
+      } else if (typeof paidAt === "string" || paidAt instanceof String) {
+        paidAt = new Date(paidAt); // Convert string to Date
+      }
+
+      console.log("Paid at:", paidAt);
       const now = new Date();
 
-      if (paidAt && now - paidAt <= 30 * 24 * 60 * 60 * 1000) {
+      // Check if paidAt is within the last 30 days
+      if (
+        paidAt &&
+        now.getTime() - paidAt.getTime() <= 30 * 24 * 60 * 60 * 1000
+      ) {
         return true; // User is a subscriber
       }
     }

@@ -52,13 +52,25 @@ async function isUserSubscribed(uid) {
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
+      console.log("User exists in Firestore:", uid);
       const userData = userDoc.data();
-      const paidAt = userData.paidAt ? userData.paidAt.toDate() : null;
+      let paidAt = userData.paidAt;
+
+      // Check if paidAt is a Firestore Timestamp
+      if (paidAt && typeof paidAt.toDate === "function") {
+        paidAt = paidAt.toDate(); // Convert Firestore Timestamp to Date
+      } else if (typeof paidAt === "string" || paidAt instanceof String) {
+        paidAt = new Date(paidAt); // Convert string to Date
+      }
+
+      console.log("Paid at:", paidAt);
       const now = new Date();
 
-      console.log("User Data:", userData);
-
-      if (paidAt && now - paidAt <= 30 * 24 * 60 * 60 * 1000) {
+      // Check if paidAt is within the last 30 days
+      if (
+        paidAt &&
+        now.getTime() - paidAt.getTime() <= 30 * 24 * 60 * 60 * 1000
+      ) {
         return true; // User is a subscriber
       }
     }

@@ -54,3 +54,60 @@ exports.completion = functions.https.onRequest(async (req, res) => {
     });
   }
 });
+
+exports.handleLemonSqueezyWebhook = functions.https.onRequest(
+    async (req, res) => {
+      const body = req.body;
+      console.log("Body");
+      console.log(body);
+      console.log(typeof body);
+
+      const event = body.meta.event_name;
+      console.log("Event");
+      console.log(event);
+
+      // Ensure we're handling the correct type of event
+      if (event === "subscription_payment_success") {
+        const userEmail = body.data.attributes.user_email;
+        const paymentDate = body.data.attributes.created_at;
+
+        console.log("User email");
+        console.log(userEmail);
+
+        console.log("Payment date");
+        console.log(paymentDate);
+
+        try {
+        // Query Firestore to find the user document by email
+          const usersCollection = admin.firestore().collection("users");
+          const querySnapshot = await usersCollection
+              .where("email", "==", userEmail)
+              .limit(1)
+              .get();
+
+          if (querySnapshot.empty) {
+            console.error("No matching user found for email:", userEmail);
+            return res.status(404).send("No matching user found");
+          }
+
+          const userDocRef = querySnapshot.docs[0].ref;
+
+          await userDocRef.set(
+              {
+                paidAt: paymentDate,
+              },
+              {merge: true},
+          );
+
+          console.log("Payment recorded successfully");
+          res.status(200).send("Payment recorded successfully");
+        } catch (error) {
+          console.error("Error updating Firestore:", error);
+          res.status(500).send("Failed to record payment");
+        }
+      } else {
+        console.error("Unhandled event type or invalid payment status");
+        res.status(400).send("Unhandled event type or invalid payment status");
+      }
+    },
+);
