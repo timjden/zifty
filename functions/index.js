@@ -11,6 +11,7 @@ admin.initializeApp();
 // const db = admin.firestore();
 
 exports.completion = functions.https.onRequest(async (req, res) => {
+  console.log("Received completion request");
   const payload = req.body;
   const query = payload.query || "tongue scraper near me";
   const apiKey = process.env.OPENAI_SECRET;
@@ -48,6 +49,7 @@ exports.completion = functions.https.onRequest(async (req, res) => {
   try {
     const response = await axios.post(url, data, {headers: requestHeaders});
     const completion = response.data;
+    console.log("Completion:", completion.choices[0].message.content);
 
     return res.status(200).json({
       completion: completion.choices[0].message.content,
@@ -59,58 +61,6 @@ exports.completion = functions.https.onRequest(async (req, res) => {
     });
   }
 });
-
-exports.handleLemonSqueezyWebhook = functions.https.onRequest(
-    async (req, res) => {
-      console.log("Received subscription_payment_success event");
-      const body = req.body;
-      const event = body.meta.event_name;
-
-      // Ensure we're handling the correct type of event
-      if (event === "subscription_payment_success") {
-        const userEmail = body.data.attributes.user_email;
-        const paymentDate = body.data.attributes.created_at;
-        const subscriptionId = body.data.attributes.subscription_id;
-        const customerId = body.data.attributes.customer_id;
-        // const status = body.data.attributes.status;
-
-        try {
-        // Query Firestore to find the user document by email
-          const usersCollection = admin.firestore().collection("users");
-          const querySnapshot = await usersCollection
-              .where("email", "==", userEmail)
-              .limit(1)
-              .get();
-
-          if (querySnapshot.empty) {
-            console.error("No matching user found for email:", userEmail);
-            return res.status(404).send("No matching user found");
-          }
-
-          const userDocRef = querySnapshot.docs[0].ref;
-
-          await userDocRef.set(
-              {
-                paidAt: paymentDate,
-                subscriptionId: subscriptionId,
-                customerId: customerId,
-                status: "active",
-              },
-              {merge: true},
-          );
-
-          console.log("Payment recorded successfully");
-          res.status(200).send("Payment recorded successfully");
-        } catch (error) {
-          console.error("Error updating Firestore:", error);
-          res.status(500).send("Failed to record payment");
-        }
-      } else {
-        console.error("Unhandled event type or invalid payment status");
-        res.status(400).send("Unhandled event type or invalid payment status");
-      }
-    },
-);
 
 exports.cancelSubscription = functions.https.onCall(async (data, context) => {
   // Check if the user is authenticated
@@ -166,6 +116,121 @@ exports.cancelSubscription = functions.https.onCall(async (data, context) => {
   }
 });
 
+exports.resumeSubscription = functions.https.onCall(async (data, context) => {
+  // Check if the user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+        "unauthenticated",
+        "User must be authenticated to resume a subscription.",
+    );
+  }
+
+  const {subscriptionId} = data;
+
+  if (!subscriptionId) {
+    throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Subscription ID is required.",
+    );
+  }
+
+  try {
+    const response = await axios.patch(
+        `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`,
+        {
+          data: {
+            type: "subscriptions",
+            id: subscriptionId,
+            attributes: {
+              cancelled: false,
+            },
+          },
+        },
+        {
+          headers: {
+            "Accept": "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+            "Authorization": `Bearer ${LEMON_SQUEEZY_API_KEY}`,
+          },
+        },
+    );
+
+    console.log("Subscription resumed successfully.");
+    console.log(response.data);
+
+    return {
+      success: true,
+      message: "Subscription resumed successfully.",
+      data: response.data,
+    };
+  } catch (error) {
+    // Handle errors
+    if (error.response) {
+      throw new functions.https.HttpsError(
+          "failed-precondition",
+          `Failed to resume subscription: ${error.response.data.message}`,
+      );
+    } else {
+      throw new functions.https.HttpsError(
+          "unknown",
+          `Unknown error occurred: ${error.message}`,
+      );
+    }
+  }
+});
+
+exports.handleSubscriptionCreated = functions.https.onRequest(
+    async (req, res) => {
+      console.log("Received subscription_payment_success event");
+      const body = req.body;
+      const event = body.meta.event_name;
+
+      // Ensure we're handling the correct type of event
+      if (event === "subscription_payment_success") {
+        const userEmail = body.data.attributes.user_email;
+        const paymentDate = body.data.attributes.created_at;
+        const subscriptionId = body.data.attributes.subscription_id;
+        const customerId = body.data.attributes.customer_id;
+        // const status = body.data.attributes.status;
+
+        try {
+        // Query Firestore to find the user document by email
+          const usersCollection = admin.firestore().collection("users");
+          const querySnapshot = await usersCollection
+              .where("email", "==", userEmail)
+              .limit(1)
+              .get();
+
+          if (querySnapshot.empty) {
+            console.error("No matching user found for email:", userEmail);
+            return res.status(404).send("No matching user found");
+          }
+
+          const userDocRef = querySnapshot.docs[0].ref;
+
+          await userDocRef.set(
+              {
+                paidAt: paymentDate,
+                subscriptionId: subscriptionId,
+                customerId: customerId,
+                status: "active",
+              },
+              {merge: true},
+          );
+
+          console.log("Payment recorded successfully");
+          res.status(200).send("Payment recorded successfully");
+        } catch (error) {
+          console.error("Error updating Firestore:", error);
+          res.status(500).send("Failed to record payment");
+        }
+      } else {
+        console.error("Unhandled event type or invalid payment status");
+        res.status(400).send("Unhandled event type or invalid payment status");
+      }
+    },
+);
+
 exports.handleSubscriptionCancelled = functions.https.onRequest(
     async (req, res) => {
       console.log("Received subscription_cancelled event");
@@ -210,9 +275,9 @@ exports.handleSubscriptionCancelled = functions.https.onRequest(
         await userDocRef.set(
             {
               paidAt: paymentDate,
-              subscriptionId: null,
               customerId: customerId,
               status: "cancelled",
+              cancelledAt: formatDateToCustomISOString(new Date()),
             },
             {merge: true},
         );
@@ -293,3 +358,10 @@ exports.handleSubscriptionExpired = functions.https.onRequest(
       }
     },
 );
+
+function formatDateToCustomISOString(date) {
+  const isoString = date.toISOString().split(".")[0];
+  const microseconds = "000000";
+  const formattedDate = `${isoString}.${microseconds}Z`;
+  return formattedDate;
+}
