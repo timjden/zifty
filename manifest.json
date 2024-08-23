@@ -47,7 +47,8 @@
         "styles.css",
         "popup_styles.css",
         "offscreen.html",
-        "offscreen.js"
+        "offscreen.js",
+        "assets/google.svg"
       ],
       "matches": ["<all_urls>"]
     }

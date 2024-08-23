@@ -45,7 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log(
           "User canceled the sign-in process or closed the login window."
         );
-        authButton.textContent = "Sign in with Google"; // Revert if canceled
+        authButton.innerHTML =
+          '<img src="./assets/google.svg" /> Sign in with Google'; // Revert if canceled
         return;
       }
 
@@ -92,7 +93,8 @@ document.addEventListener("DOMContentLoaded", () => {
           "Firebase Google Sign-In failed:",
           error.message || error
         );
-        authButton.textContent = "Sign in with Google"; // Revert if failed
+        authButton.innerHTML =
+          '<img src="./assets/google.svg" /> Sign in with Google'; // Revert if failed
       }
     });
   };
@@ -104,7 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
     signOut(auth)
       .then(() => {
         console.log("User signed out successfully.");
-        authButton.textContent = "Sign in with Google"; // Update button text
+        authButton.innerHTML =
+          '<img src="./assets/google.svg" /> Sign in with Google'; // Update button text
         subscriptionContainer.style.display = "none"; // Hide subscription UI
       })
       .catch((error) => {
@@ -189,7 +192,8 @@ document.addEventListener("DOMContentLoaded", () => {
         subscriptionButton.addEventListener("click", handleSubscribe);
       }
     } else {
-      authButton.textContent = "Sign in with Google";
+      authButton.innerHTML =
+        '<img src="./assets/google.svg" /> Sign in with Google';
       authButton.removeEventListener("click", handleLogout);
       authButton.addEventListener("click", handleSignIn);
 
