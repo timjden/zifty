@@ -154,6 +154,18 @@ document.addEventListener("DOMContentLoaded", () => {
         { merge: true }
       );
 
+      const cancelSubscription = firebase
+        .functions()
+        .httpsCallable("cancelSubscription");
+
+      cancelSubscription({ subscriptionId: "your-subscription-id" })
+        .then((result) => {
+          console.log(result.data);
+        })
+        .catch((error) => {
+          console.error("Error canceling subscription:", error.message);
+        });
+
       subscriptionButton.textContent = "💳 Subscribe";
       subscriptionMessage.textContent =
         "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
