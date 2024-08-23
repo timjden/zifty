@@ -19,7 +19,7 @@ exports.completion = functions.https.onRequest(async (req, res) => {
 
   const requestHeaders = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
+    "Authorization": `Bearer ${apiKey}`,
   };
 
   const data = {
@@ -47,7 +47,7 @@ exports.completion = functions.https.onRequest(async (req, res) => {
   };
 
   try {
-    const response = await axios.post(url, data, { headers: requestHeaders });
+    const response = await axios.post(url, data, {headers: requestHeaders});
     const completion = response.data;
     console.log("Completion:", completion.choices[0].message.content);
 
@@ -66,30 +66,30 @@ exports.cancelSubscription = functions.https.onCall(async (data, context) => {
   // Check if the user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "User must be authenticated to cancel a subscription."
+        "unauthenticated",
+        "User must be authenticated to cancel a subscription.",
     );
   }
 
-  const { subscriptionId } = data;
+  const {subscriptionId} = data;
 
   if (!subscriptionId) {
     throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Subscription ID is required."
+        "invalid-argument",
+        "Subscription ID is required.",
     );
   }
 
   try {
     const response = await axios.delete(
-      `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`,
-      {
-        headers: {
-          Accept: "application/vnd.api+json",
-          "Content-Type": "application/vnd.api+json",
-          Authorization: `Bearer ${LEMON_SQUEEZY_API_KEY}`,
+        `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`,
+        {
+          headers: {
+            "Accept": "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+            "Authorization": `Bearer ${LEMON_SQUEEZY_API_KEY}`,
+          },
         },
-      }
     );
 
     console.log("Subscription cancelled successfully.");
@@ -104,13 +104,13 @@ exports.cancelSubscription = functions.https.onCall(async (data, context) => {
     // Handle errors
     if (error.response) {
       throw new functions.https.HttpsError(
-        "failed-precondition",
-        `Failed to cancel subscription: ${error.response.data.message}`
+          "failed-precondition",
+          `Failed to cancel subscription: ${error.response.data.message}`,
       );
     } else {
       throw new functions.https.HttpsError(
-        "unknown",
-        `Unknown error occurred: ${error.message}`
+          "unknown",
+          `Unknown error occurred: ${error.message}`,
       );
     }
   }
@@ -121,12 +121,12 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
   // Check if the user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "User must be authenticated to resume a subscription."
+        "unauthenticated",
+        "User must be authenticated to resume a subscription.",
     );
   }
 
-  const { subscriptionId } = data;
+  const {subscriptionId} = data;
 
   console.log("Subscription ID:", subscriptionId);
   console.log(typeof subscriptionId);
@@ -134,30 +134,30 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
   if (!subscriptionId) {
     console.log("Subscription ID is required.");
     throw new functions.https.HttpsError(
-      "invalid-argument",
-      "Subscription ID is required."
+        "invalid-argument",
+        "Subscription ID is required.",
     );
   }
 
   try {
     const response = await axios.patch(
-      `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`,
-      {
-        data: {
-          type: "subscriptions",
-          id: subscriptionId.toString(),
-          attributes: {
-            cancelled: false,
+        `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`,
+        {
+          data: {
+            type: "subscriptions",
+            id: subscriptionId.toString(),
+            attributes: {
+              cancelled: false,
+            },
           },
         },
-      },
-      {
-        headers: {
-          Accept: "application/vnd.api+json",
-          "Content-Type": "application/vnd.api+json",
-          Authorization: `Bearer ${LEMON_SQUEEZY_API_KEY}`,
+        {
+          headers: {
+            "Accept": "application/vnd.api+json",
+            "Content-Type": "application/vnd.api+json",
+            "Authorization": `Bearer ${LEMON_SQUEEZY_API_KEY}`,
+          },
         },
-      }
     );
 
     console.log("Subscription resumed successfully.");
@@ -172,40 +172,104 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
     // Handle errors
     if (error.response) {
       throw new functions.https.HttpsError(
-        "failed-precondition",
-        `Failed to resume subscription: ${error.response.data.message}`
+          "failed-precondition",
+          `Failed to resume subscription: ${error.response.data.message}`,
       );
     } else {
       console.log("Unknown error occurred:", error.response.status);
       throw new functions.https.HttpsError(
-        "unknown",
-        `Unknown error occurred: ${error.message}`
+          "unknown",
+          `Unknown error occurred: ${error.message}`,
       );
     }
   }
 });
 
 exports.handleSubscriptionCreated = functions.https.onRequest(
-  async (req, res) => {
-    console.log("Received subscription_payment_success event");
-    const body = req.body;
-    const event = body.meta.event_name;
+    async (req, res) => {
+      console.log("Received subscription_payment_success event");
+      const body = req.body;
+      const event = body.meta.event_name;
 
-    // Ensure we're handling the correct type of event
-    if (event === "subscription_payment_success") {
-      const userEmail = body.data.attributes.user_email;
-      const paymentDate = body.data.attributes.created_at;
-      const subscriptionId = body.data.attributes.subscription_id;
-      const customerId = body.data.attributes.customer_id;
-      // const status = body.data.attributes.status;
+      // Ensure we're handling the correct type of event
+      if (event === "subscription_payment_success") {
+        const userEmail = body.data.attributes.user_email;
+        const paymentDate = body.data.attributes.created_at;
+        const subscriptionId = body.data.attributes.subscription_id;
+        const customerId = body.data.attributes.customer_id;
+        // const status = body.data.attributes.status;
 
-      try {
+        try {
         // Query Firestore to find the user document by email
+          const usersCollection = admin.firestore().collection("users");
+          const querySnapshot = await usersCollection
+              .where("email", "==", userEmail)
+              .limit(1)
+              .get();
+
+          if (querySnapshot.empty) {
+            console.error("No matching user found for email:", userEmail);
+            return res.status(404).send("No matching user found");
+          }
+
+          const userDocRef = querySnapshot.docs[0].ref;
+
+          await userDocRef.set(
+              {
+                paidAt: paymentDate,
+                subscriptionId: subscriptionId,
+                customerId: customerId,
+                status: "active",
+              },
+              {merge: true},
+          );
+
+          console.log("Payment recorded successfully");
+          res.status(200).send("Payment recorded successfully");
+        } catch (error) {
+          console.error("Error updating Firestore:", error);
+          res.status(500).send("Failed to record payment");
+        }
+      } else {
+        console.error("Unhandled event type or invalid payment status");
+        res.status(400).send("Unhandled event type or invalid payment status");
+      }
+    },
+);
+
+exports.handleSubscriptionCancelled = functions.https.onRequest(
+    async (req, res) => {
+      console.log("Received subscription_cancelled event");
+      try {
+      // Verify that the request is a POST request
+        if (req.method !== "POST") {
+          return res.status(405).send("Method Not Allowed");
+        }
+
+        // Signature verification logic removed
+
+        const body = req.body;
+        console.log("Body: ", body);
+        const event = body.meta.event_name;
+        console.log("Event: ", event);
+        // const status = body.data.attributes.status;
+        // console.log("Status: ", status);
+
+        // Check if the event type is 'subscription_cancelled'
+        if (event !== "subscription_cancelled") {
+          return res
+              .status(400)
+              .send("Bad Request: Event type is not subscription_cancelled");
+        }
+
+        const userEmail = body.data.attributes.user_email;
+        const paymentDate = body.data.attributes.created_at;
+        const customerId = body.data.attributes.customer_id;
         const usersCollection = admin.firestore().collection("users");
         const querySnapshot = await usersCollection
-          .where("email", "==", userEmail)
-          .limit(1)
-          .get();
+            .where("email", "==", userEmail)
+            .limit(1)
+            .get();
 
         if (querySnapshot.empty) {
           console.error("No matching user found for email:", userEmail);
@@ -215,216 +279,152 @@ exports.handleSubscriptionCreated = functions.https.onRequest(
         const userDocRef = querySnapshot.docs[0].ref;
 
         await userDocRef.set(
-          {
-            paidAt: paymentDate,
-            subscriptionId: subscriptionId,
-            customerId: customerId,
-            status: "active",
-          },
-          { merge: true }
+            {
+              paidAt: paymentDate,
+              customerId: customerId,
+              status: "cancelled",
+              cancelledAt: formatDateToCustomISOString(new Date()),
+            },
+            {merge: true},
         );
 
-        console.log("Payment recorded successfully");
-        res.status(200).send("Payment recorded successfully");
+        // Respond with success
+        res.status(200).send("User subscription status updated successfully");
       } catch (error) {
-        console.error("Error updating Firestore:", error);
-        res.status(500).send("Failed to record payment");
+        console.error(
+            "Error handling subscription_cancelled event:",
+            error.message || error,
+        );
+        res.status(500).send("Internal Server Error");
       }
-    } else {
-      console.error("Unhandled event type or invalid payment status");
-      res.status(400).send("Unhandled event type or invalid payment status");
-    }
-  }
-);
-
-exports.handleSubscriptionCancelled = functions.https.onRequest(
-  async (req, res) => {
-    console.log("Received subscription_cancelled event");
-    try {
-      // Verify that the request is a POST request
-      if (req.method !== "POST") {
-        return res.status(405).send("Method Not Allowed");
-      }
-
-      // Signature verification logic removed
-
-      const body = req.body;
-      console.log("Body: ", body);
-      const event = body.meta.event_name;
-      console.log("Event: ", event);
-      // const status = body.data.attributes.status;
-      // console.log("Status: ", status);
-
-      // Check if the event type is 'subscription_cancelled'
-      if (event !== "subscription_cancelled") {
-        return res
-          .status(400)
-          .send("Bad Request: Event type is not subscription_cancelled");
-      }
-
-      const userEmail = body.data.attributes.user_email;
-      const paymentDate = body.data.attributes.created_at;
-      const customerId = body.data.attributes.customer_id;
-      const usersCollection = admin.firestore().collection("users");
-      const querySnapshot = await usersCollection
-        .where("email", "==", userEmail)
-        .limit(1)
-        .get();
-
-      if (querySnapshot.empty) {
-        console.error("No matching user found for email:", userEmail);
-        return res.status(404).send("No matching user found");
-      }
-
-      const userDocRef = querySnapshot.docs[0].ref;
-
-      await userDocRef.set(
-        {
-          paidAt: paymentDate,
-          customerId: customerId,
-          status: "cancelled",
-          cancelledAt: formatDateToCustomISOString(new Date()),
-        },
-        { merge: true }
-      );
-
-      // Respond with success
-      res.status(200).send("User subscription status updated successfully");
-    } catch (error) {
-      console.error(
-        "Error handling subscription_cancelled event:",
-        error.message || error
-      );
-      res.status(500).send("Internal Server Error");
-    }
-  }
+    },
 );
 
 exports.handleSubscriptionExpired = functions.https.onRequest(
-  async (req, res) => {
-    console.log("Received subscription_expired event");
-    try {
+    async (req, res) => {
+      console.log("Received subscription_expired event");
+      try {
       // Verify that the request is a POST request
-      if (req.method !== "POST") {
-        return res.status(405).send("Method Not Allowed");
-      }
+        if (req.method !== "POST") {
+          return res.status(405).send("Method Not Allowed");
+        }
 
-      // Signature verification logic removed
+        // Signature verification logic removed
 
-      const body = req.body;
-      console.log("Body: ", body);
-      const event = body.meta.event_name;
-      console.log("Event: ", event);
-      // const status = body.data.attributes.status;
-      // console.log("Status: ", status);
+        const body = req.body;
+        console.log("Body: ", body);
+        const event = body.meta.event_name;
+        console.log("Event: ", event);
+        // const status = body.data.attributes.status;
+        // console.log("Status: ", status);
 
-      // Check if the event type is 'subscription_expired'
-      if (event !== "subscription_expired") {
+        // Check if the event type is 'subscription_expired'
+        if (event !== "subscription_expired") {
+          return res
+              .status(400)
+              .send("Bad Request: Event type is not subscription_expired");
+        }
+
+        const userEmail = body.data.attributes.user_email;
+        const paymentDate = body.data.attributes.created_at;
+        const customerId = body.data.attributes.customer_id;
+        const usersCollection = admin.firestore().collection("users");
+        const querySnapshot = await usersCollection
+            .where("email", "==", userEmail)
+            .limit(1)
+            .get();
+
+        if (querySnapshot.empty) {
+          console.error("No matching user found for email:", userEmail);
+          return res.status(404).send("No matching user found");
+        }
+
+        const userDocRef = querySnapshot.docs[0].ref;
+
+        await userDocRef.set(
+            {
+              paidAt: paymentDate,
+              customerId: customerId,
+              status: "expired",
+            },
+            {merge: true},
+        );
+
+        // Respond with success
         return res
-          .status(400)
-          .send("Bad Request: Event type is not subscription_expired");
+            .status(200)
+            .send("User subscription status updated to expired successfully");
+      } catch (error) {
+        console.error(
+            "Error handling subscription_expired event:",
+            error.message || error,
+        );
+        return res.status(500).send("Internal Server Error");
       }
-
-      const userEmail = body.data.attributes.user_email;
-      const paymentDate = body.data.attributes.created_at;
-      const customerId = body.data.attributes.customer_id;
-      const usersCollection = admin.firestore().collection("users");
-      const querySnapshot = await usersCollection
-        .where("email", "==", userEmail)
-        .limit(1)
-        .get();
-
-      if (querySnapshot.empty) {
-        console.error("No matching user found for email:", userEmail);
-        return res.status(404).send("No matching user found");
-      }
-
-      const userDocRef = querySnapshot.docs[0].ref;
-
-      await userDocRef.set(
-        {
-          paidAt: paymentDate,
-          customerId: customerId,
-          status: "expired",
-        },
-        { merge: true }
-      );
-
-      // Respond with success
-      return res
-        .status(200)
-        .send("User subscription status updated to expired successfully");
-    } catch (error) {
-      console.error(
-        "Error handling subscription_expired event:",
-        error.message || error
-      );
-      return res.status(500).send("Internal Server Error");
-    }
-  }
+    },
 );
 
 exports.handleSubscriptionResumed = functions.https.onRequest(
-  async (req, res) => {
-    console.log("Received subscription_resumed event");
-    try {
+    async (req, res) => {
+      console.log("Received subscription_resumed event");
+      try {
       // Verify that the request is a POST request
-      if (req.method !== "POST") {
-        return res.status(405).send("Method Not Allowed");
-      }
+        if (req.method !== "POST") {
+          return res.status(405).send("Method Not Allowed");
+        }
 
-      // Signature verification logic removed
+        // Signature verification logic removed
 
-      const body = req.body;
-      console.log("Body: ", body);
-      const event = body.meta.event_name;
-      console.log("Event: ", event);
+        const body = req.body;
+        console.log("Body: ", body);
+        const event = body.meta.event_name;
+        console.log("Event: ", event);
 
-      // Check if the event type is 'subscription_resumed'
-      if (event !== "subscription_resumed") {
+        // Check if the event type is 'subscription_resumed'
+        if (event !== "subscription_resumed") {
+          return res
+              .status(400)
+              .send("Bad Request: Event type is not subscription_resumed");
+        }
+
+        const userEmail = body.data.attributes.user_email;
+        const resumedDate = body.data.attributes.created_at;
+        const customerId = body.data.attributes.customer_id;
+
+        const usersCollection = admin.firestore().collection("users");
+        const querySnapshot = await usersCollection
+            .where("email", "==", userEmail)
+            .limit(1)
+            .get();
+
+        if (querySnapshot.empty) {
+          console.error("No matching user found for email:", userEmail);
+          return res.status(404).send("No matching user found");
+        }
+
+        const userDocRef = querySnapshot.docs[0].ref;
+
+        await userDocRef.set(
+            {
+              paidAt: resumedDate,
+              customerId: customerId,
+              status: "active",
+            },
+            {merge: true},
+        );
+
+        // Respond with success
         return res
-          .status(400)
-          .send("Bad Request: Event type is not subscription_resumed");
+            .status(200)
+            .send("User subscription status updated to active successfully");
+      } catch (error) {
+        console.error(
+            "Error handling subscription_resumed event:",
+            error.message || error,
+        );
+        return res.status(500).send("Internal Server Error");
       }
-
-      const userEmail = body.data.attributes.user_email;
-      const resumedDate = body.data.attributes.created_at;
-      const customerId = body.data.attributes.customer_id;
-
-      const usersCollection = admin.firestore().collection("users");
-      const querySnapshot = await usersCollection
-        .where("email", "==", userEmail)
-        .limit(1)
-        .get();
-
-      if (querySnapshot.empty) {
-        console.error("No matching user found for email:", userEmail);
-        return res.status(404).send("No matching user found");
-      }
-
-      const userDocRef = querySnapshot.docs[0].ref;
-
-      await userDocRef.set(
-        {
-          paidAt: resumedDate,
-          customerId: customerId,
-          status: "active",
-        },
-        { merge: true }
-      );
-
-      // Respond with success
-      return res
-        .status(200)
-        .send("User subscription status updated to active successfully");
-    } catch (error) {
-      console.error(
-        "Error handling subscription_resumed event:",
-        error.message || error
-      );
-      return res.status(500).send("Internal Server Error");
-    }
-  }
+    },
 );
 
 function formatDateToCustomISOString(date) {
