@@ -14,6 +14,13 @@
   height: 50px; /* Each button will take up nearly half the container's height */
   width: 100%; /* Makes the buttons fill the container's width */
   box-sizing: border-box; /* Ensures padding/border are included in the width/height */
+  cursor: pointer; /* Changes cursor to pointer on hover */
+}
+
+#authButton {
+  display: flex;
+  /* align-items: center; 
+  justify-content: center; */
 }
 
 #subscription-message {
@@ -74,4 +81,17 @@ p {
   60% {
     opacity: 0;
   }
+}
+
+img {
+  /* border: 1px solid green; */
+  margin-right: 8px;
+  width: auto;
+  vertical-align: middle;
+}
+
+#auth-button-label {
+  /* border: 1px solid red; */
+  position: relative;
+  top: 1px; /* Adjust this value to move the label down */
 }

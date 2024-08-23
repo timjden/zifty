@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "User canceled the sign-in process or closed the login window."
         );
         authButton.innerHTML =
-          '<img src="./assets/google.svg" /> Sign in with Google'; // Revert if canceled
+          '<img src="./assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>'; // Revert if canceled
         return;
       }
 
@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
           error.message || error
         );
         authButton.innerHTML =
-          '<img src="./assets/google.svg" /> Sign in with Google'; // Revert if failed
+          '<img src="./assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>'; // Revert if failed
       }
     });
   };
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(() => {
         console.log("User signed out successfully.");
         authButton.innerHTML =
-          '<img src="./assets/google.svg" /> Sign in with Google'; // Update button text
+          '<img src="./assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>'; // Update button text
         subscriptionContainer.style.display = "none"; // Hide subscription UI
       })
       .catch((error) => {
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } else {
       authButton.innerHTML =
-        '<img src="./assets/google.svg" /> Sign in with Google';
+        '<img src="./assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>';
       authButton.removeEventListener("click", handleLogout);
       authButton.addEventListener("click", handleSignIn);
 
