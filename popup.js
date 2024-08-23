@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await setDoc(
         userDocRef,
         {
-          cancelledAt: formatDateToISOStringWithMicroseconds(new Date()),
+          cancelledAt: formatDateToCustomISOString(new Date()),
         },
         { merge: true }
       );
@@ -241,18 +241,18 @@ async function isUserSubscribed(uid) {
   }
 }
 
-function formatDateToISOStringWithMicroseconds(date) {
-  // Get the ISO string
-  let isoString = date.toISOString();
+function formatDateToCustomISOString(date) {
+  // Get the ISO string without milliseconds
+  let isoString = date.toISOString().split(".")[0];
 
   // Add microseconds
   let microseconds = "000000";
 
-  // Replace the last 'Z' with '.000000Z'
-  isoString = isoString.replace("Z", `.${microseconds}Z`);
+  // Construct the final string with microseconds and 'Z'
+  let formattedDate = `${isoString}.${microseconds}Z`;
 
-  return isoString;
+  return formattedDate;
 }
 
-let formattedDate = formatDateToISOStringWithMicroseconds(new Date());
+let formattedDate = formatDateToCustomISOString(new Date());
 console.log(formattedDate);
