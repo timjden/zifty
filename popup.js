@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
             uid: user.uid,
             email: user.email, // Add the email here
             paidAt: null,
+            cancelledAt: null,
           });
           console.log("User added to Firestore:", user.uid);
         } else {
@@ -145,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await setDoc(
         userDocRef,
         {
-          paidAt: null,
+          cancelledAt: new Date(),
         },
         { merge: true }
       );
