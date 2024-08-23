@@ -364,6 +364,71 @@ exports.handleSubscriptionExpired = functions.https.onRequest(
     },
 );
 
+exports.handleSubscriptionResumed = functions.https.onRequest(
+    async (req, res) => {
+      console.log("Received subscription_resumed event");
+      try {
+      // Verify that the request is a POST request
+        if (req.method !== "POST") {
+          return res.status(405).send("Method Not Allowed");
+        }
+
+        // Signature verification logic removed
+
+        const body = req.body;
+        console.log("Body: ", body);
+        const event = body.meta.event_name;
+        console.log("Event: ", event);
+
+        // Check if the event type is 'subscription_resumed'
+        if (event !== "subscription_resumed") {
+          return res
+              .status(400)
+              .send("Bad Request: Event type is not subscription_resumed");
+        }
+
+        const userEmail = body.data.attributes.user_email;
+        const resumedDate = body.data.attributes.created_at;
+        const customerId = body.data.attributes.customer_id;
+        const subscriptionId = body.data.attributes.subscription_id;
+
+        const usersCollection = admin.firestore().collection("users");
+        const querySnapshot = await usersCollection
+            .where("email", "==", userEmail)
+            .limit(1)
+            .get();
+
+        if (querySnapshot.empty) {
+          console.error("No matching user found for email:", userEmail);
+          return res.status(404).send("No matching user found");
+        }
+
+        const userDocRef = querySnapshot.docs[0].ref;
+
+        await userDocRef.set(
+            {
+              paidAt: resumedDate,
+              subscriptionId: subscriptionId,
+              customerId: customerId,
+              status: "active",
+            },
+            {merge: true},
+        );
+
+        // Respond with success
+        return res
+            .status(200)
+            .send("User subscription status updated to active successfully");
+      } catch (error) {
+        console.error(
+            "Error handling subscription_resumed event:",
+            error.message || error,
+        );
+        return res.status(500).send("Internal Server Error");
+      }
+    },
+);
+
 function formatDateToCustomISOString(date) {
   const isoString = date.toISOString().split(".")[0];
   const microseconds = "000000";
