@@ -117,6 +117,7 @@ exports.cancelSubscription = functions.https.onCall(async (data, context) => {
 });
 
 exports.resumeSubscription = functions.https.onCall(async (data, context) => {
+  console.log("Received resumeSubscription request");
   // Check if the user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -127,7 +128,11 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
 
   const {subscriptionId} = data;
 
+  console.log("Subscription ID:", subscriptionId);
+  console.log(typeof subscriptionId);
+
   if (!subscriptionId) {
+    console.log("Subscription ID is required.");
     throw new functions.https.HttpsError(
         "invalid-argument",
         "Subscription ID is required.",
@@ -140,7 +145,7 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
         {
           data: {
             type: "subscriptions",
-            id: subscriptionId,
+            id: subscriptionId.toString(),
             attributes: {
               cancelled: false,
             },
@@ -156,7 +161,6 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
     );
 
     console.log("Subscription resumed successfully.");
-    console.log(response.data);
 
     return {
       success: true,
@@ -164,6 +168,7 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
       data: response.data,
     };
   } catch (error) {
+    console.log("Error resuming subscription:", error.response.status);
     // Handle errors
     if (error.response) {
       throw new functions.https.HttpsError(
@@ -171,6 +176,7 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
           `Failed to resume subscription: ${error.response.data.message}`,
       );
     } else {
+      console.log("Unknown error occurred:", error.response.status);
       throw new functions.https.HttpsError(
           "unknown",
           `Unknown error occurred: ${error.message}`,
