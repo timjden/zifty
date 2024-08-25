@@ -1,7 +1,14 @@
 import { logLocation } from "./geolocation.js";
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import {
+  getAuth,
+  signInWithCredential,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDgWfdkRTROBGq2JjNzZmRVldgdr8iayLg",
@@ -16,6 +23,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app);
 
 console.log("Zifty background script is running.");
 
@@ -30,50 +38,61 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 });
 
 // Receive the search details from content script
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-  if (request.type === "searchDetails") {
-    console.log("Received result:", request.data);
-    const location = await logLocation(); // Get location before sending request to Facebook Marketplace
-    console.log("Location:", location);
-    if (request.data.page === "google") {
-      const headers = {
-        "Content-Type": "application/json",
-      };
-      const body = JSON.stringify({ query: request.data.query });
-      const response = await fetch(
-        "https://us-central1-zifty-4e74a.cloudfunctions.net/completion",
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const handleSearchDetails = async () => {
+    try {
+      console.log("Received result:", request.data);
+      const location = await logLocation(); // Get location before sending request to Facebook Marketplace
+      console.log("Location:", location);
+
+      if (request.data.page === "google") {
+        const headers = {
+          "Content-Type": "application/json",
+        };
+        const body = JSON.stringify({ query: request.data.query });
+        const response = await fetch(
+          "https://us-central1-zifty-4e74a.cloudfunctions.net/completion",
+          {
+            method: "POST",
+            headers,
+            body,
+          }
+        );
+        const data = await response.json();
+        console.log("Data:", data);
+        const completion = data.completion;
+        console.log("Completion:", completion);
+        request.data.query = completion.toLowerCase().trim();
+      }
+
+      const fbListings = await fetchFromFacebookMarketplace(
+        request.data.query,
         {
-          method: "POST",
-          headers,
-          body,
-        }
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+        8 // radius
       );
-      const data = await response.json();
-      console.log("Data:", data);
-      const completion = data.completion;
-      console.log("Completion:", completion);
-      request.data.query = completion.toLowerCase().trim();
+      console.log("Number of listings:", fbListings.length);
+      chrome.tabs.sendMessage(sender.tab.id, {
+        message: "Listings",
+        query: request.data.query,
+        data: fbListings,
+      });
+      sendResponse({ success: true }); // Send a response to indicate completion
+    } catch (error) {
+      console.error("Error during searchDetails processing:", error);
+      sendResponse({ success: false, error: error.message });
     }
-    const fbListings = await fetchFromFacebookMarketplace(
-      request.data.query,
-      {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      },
-      8 // radius
-    );
-    console.log("Number of listings:", fbListings.length);
-    chrome.tabs.sendMessage(sender.tab.id, {
-      message: "Listings",
-      query: request.data.query,
-      data: fbListings,
-    });
-  } else if (request.message === "isUserSubscribed") {
-    console.log("Checking if user is subscribed...");
-    const user = auth.currentUser;
-    if (user) {
-      console.log("User:", user);
-      isUserSubscribed(user.uid).then((response) => {
+  };
+
+  const handleIsUserSubscribed = async () => {
+    try {
+      console.log("Checking if user is subscribed...");
+      const user = auth.currentUser;
+      if (user) {
+        console.log("User:", user);
+        const response = await isUserSubscribed(user.uid);
         console.log("User is subscribed:", response);
         if (sender.tab) {
           chrome.tabs.sendMessage(sender.tab.id, {
@@ -81,19 +100,369 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             isSubscribed: response,
           });
         }
-      });
-    } else {
-      console.log("User is not signed in.");
-      if (sender.tab) {
-        chrome.tabs.sendMessage(sender.tab.id, {
-          message: "isSubscribed",
-          isSubscribed: false,
+      } else {
+        console.log("User is not signed in.");
+        if (sender.tab) {
+          chrome.tabs.sendMessage(sender.tab.id, {
+            message: "isSubscribed",
+            isSubscribed: false,
+          });
+        }
+      }
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error("Error during isUserSubscribed check:", error);
+      sendResponse({ success: false, error: error.message });
+    }
+  };
+
+  const getSessionDetails = async () => {
+    const sessionDetails = {
+      isUserSignedIn: null,
+      hasSubscription: null,
+      isSubscriptionActive: null,
+      isSubscriptionCancelled: null,
+    };
+    const user = auth.currentUser;
+
+    try {
+      if (user) {
+        console.log("User:", user);
+        const isSubscribed = await isUserSubscribed(user.uid);
+        if (isSubscribed) {
+          const isCancelled = await isUserCancelled(user.uid);
+          if (isCancelled) {
+            console.log(
+              "User has cancelled their subscription but still has access."
+            );
+            sessionDetails.isUserSignedIn = true;
+            sessionDetails.hasSubscription = true;
+            sessionDetails.isSubscriptionActive = true;
+            sessionDetails.isSubscriptionCancelled = true;
+          } else {
+            console.log("User has a subscription and has not cancelled.");
+            sessionDetails.isUserSignedIn = true;
+            sessionDetails.hasSubscription = true;
+            sessionDetails.isSubscriptionActive = true;
+            sessionDetails.isSubscriptionCancelled = false;
+          }
+        } else {
+          console.log("User is not subscribed.");
+          sessionDetails.isUserSignedIn = true;
+          sessionDetails.hasSubscription = false;
+        }
+      } else {
+        console.log("User is not signed in.");
+        sessionDetails.isUserSignedIn = false;
+      }
+    } catch (error) {
+      console.error("Error handling popupLoaded:", error);
+    }
+
+    sendResponse(sessionDetails); // Send the response after all async operations
+  };
+
+  const handleSignIn = async () => {
+    try {
+      chrome.identity.clearAllCachedAuthTokens(function () {});
+
+      const token = await new Promise((resolve, reject) => {
+        chrome.identity.getAuthToken({ interactive: true }, (token) => {
+          if (chrome.runtime.lastError || !token) {
+            reject(
+              "User cancelled the sign-in process or closed the login window."
+            );
+          } else {
+            resolve(token);
+          }
         });
+      });
+
+      const credential = GoogleAuthProvider.credential(null, token);
+      const result = await signInWithCredential(auth, credential);
+      const user = result.user;
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          email: user.email,
+          paidAt: null,
+          cancelledAt: null,
+          subscriptionId: null,
+          status: null,
+          customerId: null,
+        });
+        console.log("User added to Firestore:", user.uid);
+      }
+
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error("Firebase Google Sign-In failed:", error);
+      sendResponse({ success: false, error: error.message || error });
+    }
+  };
+
+  const handleSignOut = async () => {
+    signOut(auth)
+      .then(() => {
+        console.log("User signed out successfully.");
+        sendResponse({ success: true });
+      })
+      .catch((error) => {
+        console.error("Sign out failed:", error.message || error);
+        sendResponse({ success: false, error: error.message || error });
+      });
+  };
+
+  // const handleResume = async () => {
+  //   try {
+  //     const userDocRef = doc(db, "users", auth.currentUser.uid);
+  //     const userDoc = await getDoc(userDocRef);
+  //     if (userDoc.exists()) {
+  //       const userData = userDoc.data();
+  //       const subscriptionId = userData.subscriptionId;
+
+  //       if (!subscriptionId) {
+  //         throw new Error("No subscription ID found for this user.");
+  //       }
+
+  //       // Call the resumeSubscription function using Firebase Functions
+  //       // This Firebase Function will call the Lemon Squeezy API to resume the subscription, and update the user's document in Firestore
+  //       const resumeSubscription = httpsCallable(
+  //         functions,
+  //         "resumeSubscription"
+  //       );
+
+  //       await resumeSubscription({ subscriptionId })
+  //         .then((result) => {
+  //           console.log("Subscription resumed:", result.data);
+  //           sendResponse({ success: true });
+  //         })
+  //         .catch((error) => {
+  //           sendResponse({ success: false, error: error.message });
+  //           console.error("Error resuming subscription:", error.message);
+  //           throw new Error("Failed to resume the subscription.");
+  //         });
+  //     } else {
+  //       sendResponse({
+  //         success: false,
+  //         error: "User document does not exist.",
+  //       });
+  //       throw new Error("User document does not exist.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to resume subscription:", error.message || error);
+  //     sendResponse({ success: false, error: error.message || error });
+  //   }
+  // };
+
+  const handleResume = async () => {
+    try {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const subscriptionId = userData.subscriptionId;
+
+        if (!subscriptionId) {
+          throw new Error("No subscription ID found for this user.");
+        }
+
+        const resumeSubscription = httpsCallable(
+          functions,
+          "resumeSubscription"
+        );
+
+        await resumeSubscription({ subscriptionId })
+          .then(async (result) => {
+            console.log("Subscription resumed:", result.data);
+
+            // Start polling to check for the updated renewedAt timestamp
+            await pollForUpdate(userDocRef, "renewedAt", (renewedAt) => {
+              if (renewedAt) {
+                const renewedAtTime = new Date(renewedAt).getTime();
+                const currentTime = Date.now();
+                const threshold = 2000; // 10 seconds threshold
+                return currentTime - renewedAtTime <= threshold;
+              }
+              return false;
+            });
+
+            sendResponse({ success: true });
+          })
+          .catch((error) => {
+            sendResponse({ success: false, error: error.message });
+            console.error("Error resuming subscription:", error.message);
+            throw new Error("Failed to resume the subscription.");
+          });
+      } else {
+        sendResponse({
+          success: false,
+          error: "User document does not exist.",
+        });
+        throw new Error("User document does not exist.");
+      }
+    } catch (error) {
+      console.error("Failed to resume subscription:", error.message || error);
+      sendResponse({ success: false, error: error.message || error });
+    }
+  };
+
+  // const handleCancel = async () => {
+  //   try {
+  //     const userDocRef = doc(db, "users", auth.currentUser.uid);
+  //     const userDoc = await getDoc(userDocRef);
+  //     if (userDoc.exists()) {
+  //       const userData = userDoc.data();
+  //       const subscriptionId = userData.subscriptionId;
+
+  //       if (!subscriptionId) {
+  //         sendResponse({
+  //           success: false,
+  //           error: "No subscription ID found for this user.",
+  //         });
+  //         throw new Error("No subscription ID found for this user.");
+  //       }
+
+  //       // Call the cancelSubscription function using Firebase Functions
+  //       // This Firebase Function will call the Lemon Squeezy API to cancel the subscription, and update the user's document in Firestore
+  //       const cancelSubscription = httpsCallable(
+  //         functions,
+  //         "cancelSubscription"
+  //       );
+
+  //       await cancelSubscription({ subscriptionId })
+  //         .then((result) => {
+  //           sendResponse({ success: true });
+  //           console.log("Subscription cancelled:", result.data);
+  //         })
+  //         .catch((error) => {
+  //           console.error("Error canceling subscription:", error.message);
+  //           sendResponse({ success: false, error: error.message });
+  //           throw new Error("Failed to cancel the subscription.");
+  //         });
+  //     } else {
+  //       sendResponse({
+  //         success: false,
+  //         error: "User document does not exist.",
+  //       });
+  //       throw new Error("User document does not exist.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to cancel subscription:", error.message || error);
+  //     sendResponse({ success: false, error: error.message || error });
+  //   }
+  // };
+
+  const handleCancel = async () => {
+    try {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const subscriptionId = userData.subscriptionId;
+
+        if (!subscriptionId) {
+          sendResponse({
+            success: false,
+            error: "No subscription ID found for this user.",
+          });
+          throw new Error("No subscription ID found for this user.");
+        }
+
+        const cancelSubscription = httpsCallable(
+          functions,
+          "cancelSubscription"
+        );
+
+        await cancelSubscription({ subscriptionId })
+          .then(async (result) => {
+            console.log("Subscription cancelled:", result.data);
+
+            // Start polling to check for the updated cancelledAt timestamp
+            await pollForUpdate(userDocRef, "cancelledAt", (cancelledAt) => {
+              if (cancelledAt) {
+                const cancelledAtTime = new Date(cancelledAt).getTime();
+                const currentTime = Date.now();
+                const threshold = 2000; // 10 seconds threshold
+                return currentTime - cancelledAtTime <= threshold;
+              }
+              return false;
+            });
+
+            sendResponse({ success: true });
+          })
+          .catch((error) => {
+            console.error("Error canceling subscription:", error.message);
+            sendResponse({ success: false, error: error.message });
+            throw new Error("Failed to cancel the subscription.");
+          });
+      } else {
+        sendResponse({
+          success: false,
+          error: "User document does not exist.",
+        });
+        throw new Error("User document does not exist.");
+      }
+    } catch (error) {
+      console.error("Failed to cancel subscription:", error.message || error);
+      sendResponse({ success: false, error: error.message || error });
+    }
+  };
+
+  if (request.type === "searchDetails") {
+    handleSearchDetails();
+  } else if (request.message === "isUserSubscribed") {
+    handleIsUserSubscribed();
+  } else if (request.message === "getSessionDetails") {
+    getSessionDetails();
+  } else if (request.message === "signIn") {
+    handleSignIn();
+  } else if (request.message === "signOut") {
+    handleSignOut();
+  } else if (request.message === "resumeSubscription") {
+    handleResume();
+  } else if (request.message === "cancelSubscription") {
+    handleCancel();
+  }
+
+  return true; // Keep the message channel open for asynchronous response
+});
+
+const pollForUpdate = async (
+  docRef,
+  fieldName,
+  checkUpdateCondition,
+  interval = 1000,
+  maxAttempts = 10
+) => {
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    const docSnapshot = await getDoc(docRef);
+    if (docSnapshot.exists()) {
+      const docData = docSnapshot.data();
+      const fieldValue = docData[fieldName];
+
+      if (checkUpdateCondition(fieldValue)) {
+        // If the field satisfies the condition, stop polling
+        return;
       }
     }
+
+    // Wait for the specified interval before checking again
+    await new Promise((resolve) => setTimeout(resolve, interval));
+
+    attempts++;
   }
-  return true;
-});
+
+  // If maxAttempts is reached and the condition is not met, throw an error
+  throw new Error(`Timeout: ${fieldName} was not updated in time.`);
+};
 
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   let listings = [];
