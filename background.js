@@ -118,45 +118,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   const getSessionDetails = async () => {
     const sessionDetails = {
-      isUserSignedIn: null,
-      hasSubscription: null,
-      isSubscriptionActive: null,
-      isSubscriptionCancelled: null,
+      isUserSignedIn: false,
+      hasSubscription: false,
+      isSubscriptionActive: false,
+      isSubscriptionCancelled: false,
     };
-    const user = auth.currentUser;
 
     try {
+      const user = await new Promise((resolve, reject) => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+          unsubscribe(); // Stop listening once we've got the auth state
+          resolve(user);
+        }, reject);
+      });
+
       if (user) {
         console.log("User:", user);
+        sessionDetails.isUserSignedIn = true;
+
         const isSubscribed = await isUserSubscribed(user.uid);
+        sessionDetails.hasSubscription = isSubscribed;
+
         if (isSubscribed) {
           const isCancelled = await isUserCancelled(user.uid);
-          if (isCancelled) {
-            console.log(
-              "User has cancelled their subscription but still has access."
-            );
-            sessionDetails.isUserSignedIn = true;
-            sessionDetails.hasSubscription = true;
-            sessionDetails.isSubscriptionActive = true;
-            sessionDetails.isSubscriptionCancelled = true;
-          } else {
-            console.log("User has a subscription and has not cancelled.");
-            sessionDetails.isUserSignedIn = true;
-            sessionDetails.hasSubscription = true;
-            sessionDetails.isSubscriptionActive = true;
-            sessionDetails.isSubscriptionCancelled = false;
-          }
+          sessionDetails.isSubscriptionActive = !isCancelled;
+          sessionDetails.isSubscriptionCancelled = isCancelled;
+
+          console.log(
+            isCancelled
+              ? "User has cancelled their subscription but still has access."
+              : "User has a subscription and has not cancelled."
+          );
         } else {
           console.log("User is not subscribed.");
-          sessionDetails.isUserSignedIn = true;
-          sessionDetails.hasSubscription = false;
         }
       } else {
         console.log("User is not signed in.");
-        sessionDetails.isUserSignedIn = false;
       }
     } catch (error) {
-      console.error("Error handling popupLoaded:", error);
+      console.error("Error handling session details:", error);
     }
 
     sendResponse(sessionDetails); // Send the response after all async operations
@@ -414,6 +414,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   };
 
+  const handleCreateSubscription = async () => {
+    if (!auth.currentUser) {
+      sendResponse({ success: false, error: "User is not signed in." });
+    } else {
+      sendResponse({ success: true, currentUser: auth.currentUser });
+    }
+  };
+
   if (request.type === "searchDetails") {
     handleSearchDetails();
   } else if (request.message === "isUserSubscribed") {
@@ -428,6 +436,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleResume();
   } else if (request.message === "cancelSubscription") {
     handleCancel();
+  } else if (request.message === "createSubscription") {
+    handleCreateSubscription();
   }
 
   return true; // Keep the message channel open for asynchronous response
