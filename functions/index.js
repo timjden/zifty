@@ -197,6 +197,7 @@ exports.handleSubscriptionCreated = functions.https.onRequest(
         const paymentDate = body.data.attributes.created_at;
         const subscriptionId = body.data.attributes.subscription_id;
         const customerId = body.data.attributes.customer_id;
+        const expiresAt = body.data.attributes.ends_at;
         // const status = body.data.attributes.status;
 
         try {
@@ -220,6 +221,7 @@ exports.handleSubscriptionCreated = functions.https.onRequest(
                 subscriptionId: subscriptionId,
                 customerId: customerId,
                 status: "active",
+                expiresAt: expiresAt,
               },
               {merge: true},
           );
@@ -265,6 +267,7 @@ exports.handleSubscriptionCancelled = functions.https.onRequest(
         const userEmail = body.data.attributes.user_email;
         const paymentDate = body.data.attributes.created_at;
         const customerId = body.data.attributes.customer_id;
+        const expiresAt = body.data.attributes.ends_at;
         const usersCollection = admin.firestore().collection("users");
         const querySnapshot = await usersCollection
             .where("email", "==", userEmail)
@@ -284,6 +287,7 @@ exports.handleSubscriptionCancelled = functions.https.onRequest(
               customerId: customerId,
               status: "cancelled",
               cancelledAt: formatDateToCustomISOString(new Date()),
+              expiresAt: expiresAt,
             },
             {merge: true},
         );
@@ -390,7 +394,7 @@ exports.handleSubscriptionResumed = functions.https.onRequest(
         const userEmail = body.data.attributes.user_email;
         const resumedDate = body.data.attributes.created_at;
         const customerId = body.data.attributes.customer_id;
-
+        const expiresAt = body.data.attributes.ends_at;
         const usersCollection = admin.firestore().collection("users");
         const querySnapshot = await usersCollection
             .where("email", "==", userEmail)
@@ -409,6 +413,7 @@ exports.handleSubscriptionResumed = functions.https.onRequest(
               paidAt: resumedDate,
               customerId: customerId,
               status: "active",
+              expiresAt: expiresAt,
             },
             {merge: true},
         );
