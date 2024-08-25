@@ -187,17 +187,20 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
 
 exports.handleSubscriptionCreated = functions.https.onRequest(
     async (req, res) => {
-      console.log("Received subscription_payment_success event");
+      console.log("Received subscription_created event");
       const body = req.body;
       const event = body.meta.event_name;
 
+      console.log(body);
+
       // Ensure we're handling the correct type of event
-      if (event === "subscription_payment_success") {
+      if (event === "subscription_created") {
         const userEmail = body.data.attributes.user_email;
         const paymentDate = body.data.attributes.created_at;
-        const subscriptionId = body.data.attributes.subscription_id;
+        const subscriptionId = body.data.id;
         const customerId = body.data.attributes.customer_id;
         const expiresAt = body.data.attributes.ends_at;
+        const renewsAt = body.data.attributes.renews_at;
         // const status = body.data.attributes.status;
 
         try {
@@ -222,19 +225,20 @@ exports.handleSubscriptionCreated = functions.https.onRequest(
                 customerId: customerId,
                 status: "active",
                 expiresAt: expiresAt,
+                renewsAt: renewsAt,
               },
               {merge: true},
           );
 
-          console.log("Payment recorded successfully");
-          res.status(200).send("Payment recorded successfully");
+          console.log("Subscription created successfully");
+          res.status(200).send("Subscription created successfully");
         } catch (error) {
           console.error("Error updating Firestore:", error);
-          res.status(500).send("Failed to record payment");
+          res.status(500).send("Failed to create subscription");
         }
       } else {
-        console.error("Unhandled event type or invalid payment status");
-        res.status(400).send("Unhandled event type or invalid payment status");
+        console.error("Unhandled event type");
+        res.status(400).send("Unhandled event type");
       }
     },
 );
@@ -268,6 +272,7 @@ exports.handleSubscriptionCancelled = functions.https.onRequest(
         const paymentDate = body.data.attributes.created_at;
         const customerId = body.data.attributes.customer_id;
         const expiresAt = body.data.attributes.ends_at;
+        const renewsAt = body.data.attributes.renews_at;
         const usersCollection = admin.firestore().collection("users");
         const querySnapshot = await usersCollection
             .where("email", "==", userEmail)
@@ -288,6 +293,7 @@ exports.handleSubscriptionCancelled = functions.https.onRequest(
               status: "cancelled",
               cancelledAt: formatDateToCustomISOString(new Date()),
               expiresAt: expiresAt,
+              renewsAt: renewsAt,
             },
             {merge: true},
         );
@@ -395,6 +401,8 @@ exports.handleSubscriptionResumed = functions.https.onRequest(
         const resumedDate = body.data.attributes.created_at;
         const customerId = body.data.attributes.customer_id;
         const expiresAt = body.data.attributes.ends_at;
+        const renewedAt = body.data.attributes.updated_at;
+        const renewsAt = body.data.attributes.renews_at;
         const usersCollection = admin.firestore().collection("users");
         const querySnapshot = await usersCollection
             .where("email", "==", userEmail)
@@ -414,6 +422,8 @@ exports.handleSubscriptionResumed = functions.https.onRequest(
               customerId: customerId,
               status: "active",
               expiresAt: expiresAt,
+              renewsAt: renewsAt,
+              renewedAt: renewedAt,
             },
             {merge: true},
         );
