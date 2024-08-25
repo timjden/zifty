@@ -117,16 +117,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const handleSubscribe = () => {
     subscriptionButton.innerHTML = loadingDotsHTML;
 
-    try {
-      console.log("Redirecting to payment page...");
-      chrome.tabs.create({
-        url:
-          "https://zifty.lemonsqueezy.com/buy/108ac084-c9a0-4c10-bd31-0a2f4552c7bf?userId=" +
-          auth.currentUser.uid,
-      });
-    } catch (error) {
-      console.error("Failed to subscribe:", error.message || error);
-    }
+    chrome.runtime.sendMessage(
+      { message: "createSubscription" },
+      (response) => {
+        if (response.success) {
+          try {
+            console.log("Redirecting to payment page...");
+            chrome.tabs.create({
+              url:
+                "https://zifty.lemonsqueezy.com/buy/108ac084-c9a0-4c10-bd31-0a2f4552c7bf?checkout[custom][user_id]=" +
+                response.currentUser.uid,
+            });
+          } catch (error) {
+            console.error("Failed to subscribe:", error.message || error);
+          }
+        }
+      }
+    );
   };
 
   const handleResume = () => {
