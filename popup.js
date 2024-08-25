@@ -51,7 +51,7 @@ function updateUI(
     authButton.addEventListener("click", handleSignIn);
 
     signUpMessage.textContent =
-      "Sign up and subscribe to access premium features!";
+      "Sign in and subscribe to access premium features!";
     subscriptionContainer.style.display = "none";
   }
 }
@@ -187,55 +187,4 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     );
   };
-
-  // onAuthStateChanged(auth, async (user) => {
-  //   if (user) {
-  //     // If a user is signed in change the functionality of the button to logout
-  //     // If the user is not signed in, change the functionality of the button to sign in
-  //     authButton.textContent = "Logout";
-  //     authButton.removeEventListener("click", handleSignIn);
-  //     authButton.addEventListener("click", handleLogout);
-
-  //     subscriptionContainer.style.display = "inline-block";
-  //     signUpMessage.textContent = "";
-
-  //     // Then check if that user is subscribed
-  //     const isSubscribed = await isUserSubscribed(user.uid);
-
-  //     if (isSubscribed) {
-  //       const isCancelled = await isUserCancelled(user.uid);
-  //       // If the user is subscribed but has cancelled, show the renew button, otherwise show the cancel button
-  //       // If the user is not subscribed, show the subscribe button
-  //       if (isCancelled) {
-  //         subscriptionButton.textContent = "Resume Subscription";
-  //         subscriptionMessage.innerHTML =
-  //           "Your subscription has been cancelled and will expire soon.";
-  //         subscriptionButton.removeEventListener("click", handleSubscribe);
-  //         subscriptionButton.addEventListener("click", handleResume);
-  //       } else {
-  //         subscriptionButton.textContent = "Cancel Subscription 😔";
-  //         subscriptionMessage.innerHTML =
-  //           'Thanks for being a Zifty subscriber! 🎉 Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a>.';
-  //         subscriptionButton.removeEventListener("click", handleSubscribe);
-  //         subscriptionButton.addEventListener("click", handleCancel);
-  //       }
-  //     } else {
-  //       subscriptionButton.textContent = "💳 Subscribe";
-  //       subscriptionMessage.textContent =
-  //         "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
-  //       subscriptionButton.removeEventListener("click", handleCancel);
-  //       subscriptionButton.removeEventListener("click", handleResume);
-  //       subscriptionButton.addEventListener("click", handleSubscribe);
-  //     }
-  //   } else {
-  //     authButton.innerHTML =
-  //       '<img src="./assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>';
-  //     authButton.removeEventListener("click", handleLogout);
-  //     authButton.addEventListener("click", handleSignIn);
-
-  //     signUpMessage.textContent =
-  //       "Sign up and subscribe to access premium features!";
-  //     subscriptionContainer.style.display = "none";
-  //   }
-  // });
 });

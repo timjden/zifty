@@ -217,48 +217,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
   };
 
-  // const handleResume = async () => {
-  //   try {
-  //     const userDocRef = doc(db, "users", auth.currentUser.uid);
-  //     const userDoc = await getDoc(userDocRef);
-  //     if (userDoc.exists()) {
-  //       const userData = userDoc.data();
-  //       const subscriptionId = userData.subscriptionId;
-
-  //       if (!subscriptionId) {
-  //         throw new Error("No subscription ID found for this user.");
-  //       }
-
-  //       // Call the resumeSubscription function using Firebase Functions
-  //       // This Firebase Function will call the Lemon Squeezy API to resume the subscription, and update the user's document in Firestore
-  //       const resumeSubscription = httpsCallable(
-  //         functions,
-  //         "resumeSubscription"
-  //       );
-
-  //       await resumeSubscription({ subscriptionId })
-  //         .then((result) => {
-  //           console.log("Subscription resumed:", result.data);
-  //           sendResponse({ success: true });
-  //         })
-  //         .catch((error) => {
-  //           sendResponse({ success: false, error: error.message });
-  //           console.error("Error resuming subscription:", error.message);
-  //           throw new Error("Failed to resume the subscription.");
-  //         });
-  //     } else {
-  //       sendResponse({
-  //         success: false,
-  //         error: "User document does not exist.",
-  //       });
-  //       throw new Error("User document does not exist.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to resume subscription:", error.message || error);
-  //     sendResponse({ success: false, error: error.message || error });
-  //   }
-  // };
-
   const handleResume = async () => {
     try {
       const userDocRef = doc(db, "users", auth.currentUser.uid);
@@ -311,52 +269,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: false, error: error.message || error });
     }
   };
-
-  // const handleCancel = async () => {
-  //   try {
-  //     const userDocRef = doc(db, "users", auth.currentUser.uid);
-  //     const userDoc = await getDoc(userDocRef);
-  //     if (userDoc.exists()) {
-  //       const userData = userDoc.data();
-  //       const subscriptionId = userData.subscriptionId;
-
-  //       if (!subscriptionId) {
-  //         sendResponse({
-  //           success: false,
-  //           error: "No subscription ID found for this user.",
-  //         });
-  //         throw new Error("No subscription ID found for this user.");
-  //       }
-
-  //       // Call the cancelSubscription function using Firebase Functions
-  //       // This Firebase Function will call the Lemon Squeezy API to cancel the subscription, and update the user's document in Firestore
-  //       const cancelSubscription = httpsCallable(
-  //         functions,
-  //         "cancelSubscription"
-  //       );
-
-  //       await cancelSubscription({ subscriptionId })
-  //         .then((result) => {
-  //           sendResponse({ success: true });
-  //           console.log("Subscription cancelled:", result.data);
-  //         })
-  //         .catch((error) => {
-  //           console.error("Error canceling subscription:", error.message);
-  //           sendResponse({ success: false, error: error.message });
-  //           throw new Error("Failed to cancel the subscription.");
-  //         });
-  //     } else {
-  //       sendResponse({
-  //         success: false,
-  //         error: "User document does not exist.",
-  //       });
-  //       throw new Error("User document does not exist.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to cancel subscription:", error.message || error);
-  //     sendResponse({ success: false, error: error.message || error });
-  //   }
-  // };
 
   const handleCancel = async () => {
     try {
