@@ -26,12 +26,14 @@ function updateUI(
         subscriptionMessage.innerHTML =
           "Your subscription has been cancelled and will expire soon.";
         subscriptionButton.removeEventListener("click", handleSubscribe);
+        subscriptionButton.removeEventListener("click", handleCancel);
         subscriptionButton.addEventListener("click", handleResume);
       } else {
         subscriptionButton.textContent = "Cancel Subscription 😔";
         subscriptionMessage.innerHTML =
           'Thanks for being a Zifty subscriber! 🎉 Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a>.';
         subscriptionButton.removeEventListener("click", handleSubscribe);
+        subscriptionButton.removeEventListener("click", handleResume);
         subscriptionButton.addEventListener("click", handleCancel);
       }
     } else {
