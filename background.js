@@ -286,7 +286,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               if (renewedAt) {
                 const renewedAtTime = new Date(renewedAt).getTime();
                 const currentTime = Date.now();
-                const threshold = 2000; // 10 seconds threshold
+                const threshold = 5000; // 10 seconds threshold
                 return currentTime - renewedAtTime <= threshold;
               }
               return false;
@@ -388,7 +388,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               if (cancelledAt) {
                 const cancelledAtTime = new Date(cancelledAt).getTime();
                 const currentTime = Date.now();
-                const threshold = 2000; // 10 seconds threshold
+                const threshold = 5000; // 10 seconds threshold
                 return currentTime - cancelledAtTime <= threshold;
               }
               return false;
