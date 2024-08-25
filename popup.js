@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Update the UI to reflect the subscription status
         subscriptionButton.textContent = "Cancel Subscription";
         subscriptionMessage.innerHTML =
-          'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
+          'Thanks for being a Zifty subscriber! 🎉 Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a>.';
         subscriptionButton.removeEventListener("click", handleResume);
         subscriptionButton.addEventListener("click", handleCancel);
       } else {
@@ -209,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Failed to cancel subscription:", error.message || error);
       subscriptionButton.textContent = "Cancel Subscription 😔"; // Revert if failed
       subscriptionMessage.innerHTML =
-        'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
+        'Thanks for being a Zifty subscriber! 🎉 Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a>.';
     }
   };
 
@@ -240,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           subscriptionButton.textContent = "Cancel Subscription 😔";
           subscriptionMessage.innerHTML =
-            'Thanks for being a Zifty subscriber! Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a> 🎉';
+            'Thanks for being a Zifty subscriber! 🎉 Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a>.';
           subscriptionButton.removeEventListener("click", handleSubscribe);
           subscriptionButton.addEventListener("click", handleCancel);
         }
