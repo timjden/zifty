@@ -2,6 +2,8 @@ import { logLocation } from "./geolocation.js";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
+  setPersistence,
+  indexedDBLocalPersistence,
   signInWithCredential,
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -125,14 +127,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     };
 
     try {
+      // Set session persistence to IndexedDB for service workers or background scripts
+      await setPersistence(auth, indexedDBLocalPersistence);
+
       const user = await new Promise((resolve, reject) => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-          unsubscribe(); // Stop listening once we've got the auth state
-          resolve(user);
-        }, reject);
+        const unsubscribe = onAuthStateChanged(
+          auth,
+          (user) => {
+            unsubscribe(); // Stop listening once we've got the auth state
+            resolve(user);
+          },
+          reject
+        );
       });
 
       if (user) {
+        // Refresh token logic
+        await user.getIdToken(true); // Force refresh the token to ensure it is up-to-date
+
         console.log("User:", user);
         sessionDetails.isUserSignedIn = true;
 
