@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Redirecting to payment page...");
             chrome.tabs.create({
               url:
-                "https://zifty.lemonsqueezy.com/buy/108ac084-c9a0-4c10-bd31-0a2f4552c7bf?checkout[custom][user_id]=" +
+                "https://zifty.lemonsqueezy.com/buy/fa2ee847-27be-4cab-88f8-09ff3b8d6890?checkout[custom][user_id]=" +
                 response.currentUser.uid,
             });
           } catch (error) {
