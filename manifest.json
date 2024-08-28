@@ -1,12 +1,12 @@
 {
   "name": "Zifty",
-  "version": "2.0",
+  "version": "2.0.1",
   "description": "Discover secondhand treasures while you shop!",
   "author": "Zifty",
   "manifest_version": 3,
   "permissions": ["offscreen", "geolocation", "identity"],
   "oauth2": {
-    "client_id": "453820350601-27jgm58vqe3qrmrs3mt4i2ovftjjhkom.apps.googleusercontent.com",
+    "client_id": "453820350601-osqpoh4faamah3q44974f9toijdd1vbu.apps.googleusercontent.com",
     "scopes": ["https://www.googleapis.com/auth/userinfo.email"]
   },
   "action": {
