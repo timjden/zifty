@@ -39,7 +39,7 @@ function updateUI(
     } else {
       subscriptionButton.textContent = "💳 Subscribe";
       subscriptionMessage.textContent =
-        "Zifty is free to use with Amazon. Subscribe for $1/week to use Zifty with Google. Cancel anytime.";
+        "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
       subscriptionButton.removeEventListener("click", handleResume);
       subscriptionButton.addEventListener("click", handleSubscribe);
