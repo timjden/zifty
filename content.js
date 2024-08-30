@@ -146,9 +146,25 @@ function getSearchDetails() {
     console.log("Amazon search page detected");
     searchDetails.page = "amazon";
     searchDetails.query = extractQueryParamValue(url.href, "k");
+  } else if (/\.walmart\./.test(hostname)) {
+    console.log("Walmart search page detected");
+    searchDetails.page = "walmart";
+    searchDetails.query = extractQueryParamValue(url.href, "q");
+  } else if (/\.takealot\./.test(hostname)) {
+    console.log("Takealot search page detected");
+    searchDetails.page = "takealot";
+    searchDetails.query = extractQueryParamValue(url.href, "qsearch");
+  } else if (/\.bol\./.test(hostname)) {
+    console.log("Bol search page detected");
+    searchDetails.page = "bol";
+    searchDetails.query = extractQueryParamValue(url.href, "searchtext");
   } else if (/\.google\./.test(hostname)) {
     console.log("Google search page detected");
     searchDetails.page = "google";
+    searchDetails.query = extractQueryParamValue(url.href, "q");
+  } else if (/\.bing\./.test(hostname)) {
+    console.log("Bing search page detected");
+    searchDetails.page = "bing";
     searchDetails.query = extractQueryParamValue(url.href, "q");
   }
 
@@ -179,20 +195,42 @@ function isSupportedSite() {
     null
   ).singleNodeValue;
   const googleBuyPanelExists = googleBuyPanel !== null;
-  const url = new URL(window.location.href);
+  let url = new URL(window.location.href);
   const isGoogleSearchBuyPage =
     /^www\.google\./.test(url.hostname) &&
     url.pathname === "/search" &&
     googleBuyPanelExists;
-  let result;
+
+  // Check if this is a Bing search page with product listings
+  const bingBuyPanelXpath = "//*[@class='pa_mlo pa_carousel_mlo']";
+  const bingBuyPanel = document.evaluate(
+    bingBuyPanelXpath,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue;
+  const bingBuyPanelExists = bingBuyPanel !== null;
+  url = new URL(window.location.href);
+  const isBingSearchBuyPage =
+    /^www\.bing\./.test(url.hostname) &&
+    url.pathname === "/search" &&
+    bingBuyPanelExists;
+
+  // If the user is subscribed, they get access to all free tier sites plus Google and Bing
   console.log("isSubscribed:", isSubscribed);
+  const isFreeTierSite =
+    (/^www\.amazon\./.test(url.hostname) && url.pathname === "/s") ||
+    (/^www\.walmart\./.test(url.hostname) && url.pathname === "/search") ||
+    (/^www\.takealot\./.test(url.hostname) && url.pathname === "/all") ||
+    (/^www\.bol\./.test(url.hostname) && url.pathname === "/nl/nl/s/");
+  const isPaidTierSite = isGoogleSearchBuyPage || isBingSearchBuyPage;
+  let result;
   if (isSubscribed) {
-    // Return true if the user is on Amazon search results or a Google search page with product listings
-    result =
-      (/^www\.amazon\./.test(url.hostname) && url.pathname === "/s") ||
-      isGoogleSearchBuyPage;
+    // Return true if the user is on Amazon\Walmart etc. search results or a Google\Bing etc. search page with product listings
+    result = isFreeTierSite || isPaidTierSite;
   } else {
-    result = /^www\.amazon\./.test(url.hostname) && url.pathname === "/s";
+    result = isFreeTierSite;
   }
 
   return result;
@@ -417,7 +455,7 @@ function populateOverlay(request, overlay) {
       if (request.data.length === 0) {
         const noListings = document.createElement("span");
         noListings.id = "no-listings";
-        noListings.textContent = `No listings found for "${request.query}".`;
+        noListings.innerHTML = `No listings found for "${request.query}".<br>Refine your search query. Ensure your VPN is disabled.`;
         listingsSlider.appendChild(noListings);
         listingsContainer.appendChild(listingsSlider);
         return;
