@@ -27,7 +27,22 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
 
-console.log("Zifty background script is running.");
+//console.log("Zifty background script is running.");
+
+// Alert user that Edge is not supported
+function detectEdgeBrowser() {
+  const userAgent = navigator.userAgent;
+  const isEdge = userAgent.includes("Edg");
+
+  if (isEdge) {
+    //console.log("This extension is not supported on Microsoft Edge.");
+    alert(
+      "This extension is not supported on Microsoft Edge. Please use Google Chrome."
+    );
+  }
+}
+
+detectEdgeBrowser();
 
 // Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
@@ -43,11 +58,11 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const handleSearchDetails = async () => {
     try {
-      console.log("Received result:", request.data);
+      //console.log("Received result:", request.data);
       const location = await logLocation(); // Get location before sending request to Facebook Marketplace
-      console.log("Location:", location);
+      //console.log("Location:", location);
 
-      if (request.data.page === "google") {
+      if (request.data.page === "google" || request.data.page === "bing") {
         const headers = {
           "Content-Type": "application/json",
         };
@@ -61,9 +76,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }
         );
         const data = await response.json();
-        console.log("Data:", data);
+        //console.log("Data:", data);
         const completion = data.completion;
-        console.log("Completion:", completion);
+        //console.log("Completion:", completion);
         request.data.query = completion.toLowerCase().trim();
       }
 
@@ -75,7 +90,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         },
         8 // radius
       );
-      console.log("Number of listings:", fbListings.length);
+      //console.log("Number of listings:", fbListings.length);
       chrome.tabs.sendMessage(sender.tab.id, {
         message: "Listings",
         query: request.data.query,
@@ -90,12 +105,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   const handleIsUserSubscribed = async () => {
     try {
-      console.log("Checking if user is subscribed...");
+      //console.log("Checking if user is subscribed...");
       const user = auth.currentUser;
       if (user) {
-        console.log("User:", user);
+        //console.log("User:", user);
         const response = await isUserSubscribed(user.uid);
-        console.log("User is subscribed:", response);
+        //console.log("User is subscribed:", response);
         if (sender.tab) {
           chrome.tabs.sendMessage(sender.tab.id, {
             message: "isSubscribed",
@@ -103,7 +118,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           });
         }
       } else {
-        console.log("User is not signed in.");
+        //console.log("User is not signed in.");
         if (sender.tab) {
           chrome.tabs.sendMessage(sender.tab.id, {
             message: "isSubscribed",
@@ -145,7 +160,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Refresh token logic
         await user.getIdToken(true); // Force refresh the token to ensure it is up-to-date
 
-        console.log("User:", user);
+        //console.log("User:", user);
         sessionDetails.isUserSignedIn = true;
 
         const isSubscribed = await isUserSubscribed(user.uid);
@@ -156,16 +171,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           sessionDetails.isSubscriptionActive = !isCancelled;
           sessionDetails.isSubscriptionCancelled = isCancelled;
 
-          console.log(
-            isCancelled
-              ? "User has cancelled their subscription but still has access."
-              : "User has a subscription and has not cancelled."
-          );
+          //console.log(
+          //   isCancelled
+          //     ? "User has cancelled their subscription but still has access."
+          //     : "User has a subscription and has not cancelled."
+          // );
         } else {
-          console.log("User is not subscribed.");
+          //console.log("User is not subscribed.");
         }
       } else {
-        console.log("User is not signed in.");
+        //console.log("User is not signed in.");
       }
     } catch (error) {
       console.error("Error handling session details:", error);
@@ -181,6 +196,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const token = await new Promise((resolve, reject) => {
         chrome.identity.getAuthToken({ interactive: true }, (token) => {
           if (chrome.runtime.lastError || !token) {
+            //console.log("Error getting token:", chrome.runtime.lastError);
             reject(
               "User cancelled the sign-in process or closed the login window."
             );
@@ -207,7 +223,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           status: null,
           customerId: null,
         });
-        console.log("User added to Firestore:", user.uid);
+        //console.log("User added to Firestore:", user.uid);
       }
 
       sendResponse({ success: true });
@@ -220,7 +236,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const handleSignOut = async () => {
     signOut(auth)
       .then(() => {
-        console.log("User signed out successfully.");
+        //console.log("User signed out successfully.");
         sendResponse({ success: true });
       })
       .catch((error) => {
@@ -249,7 +265,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         await resumeSubscription({ subscriptionId })
           .then(async (result) => {
-            console.log("Subscription resumed:", result.data);
+            //console.log("Subscription resumed:", result.data);
 
             // Start polling to check for the updated renewedAt timestamp
             await pollForUpdate(userDocRef, "renewedAt", (renewedAt) => {
@@ -305,7 +321,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         await cancelSubscription({ subscriptionId })
           .then(async (result) => {
-            console.log("Subscription cancelled:", result.data);
+            //console.log("Subscription cancelled:", result.data);
 
             // Start polling to check for the updated cancelledAt timestamp
             await pollForUpdate(userDocRef, "cancelledAt", (cancelledAt) => {
@@ -500,11 +516,11 @@ async function isUserSubscribed(uid) {
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
-      console.log("User exists in Firestore:", uid);
+      //console.log("User exists in Firestore:", uid);
       const userData = userDoc.data();
       const status = userData.status;
 
-      console.log("Subscription status:", status);
+      //console.log("Subscription status:", status);
 
       if (status === "active" || status === "cancelled") {
         return true; // User is a subscriber
@@ -529,11 +545,11 @@ async function isUserCancelled(uid) {
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
-      console.log("User exists in Firestore:", uid);
+      //console.log("User exists in Firestore:", uid);
       const userData = userDoc.data();
       const status = userData.status;
 
-      console.log("Subscription status:", status);
+      //console.log("Subscription status:", status);
 
       if (status === "cancelled") {
         return true; // User has cancelled their subscription
