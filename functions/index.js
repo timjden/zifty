@@ -1,14 +1,24 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
+const crypto = require("crypto"); // Import crypto for signature verification
 require("dotenv").config(); // Load environment variables from .env file
 
-// Get the API key from the .env file
 const LEMON_SQUEEZY_API_KEY = process.env.LEMON_SQUEEZY_API_KEY;
+const LEMON_SQUEEZY_EVENT_SECRET = process.env.LEMON_SQUEEZY_EVENT_SECRET;
 
-// Initialize the Firebase Admin SDK
 admin.initializeApp();
-// const db = admin.firestore();
+
+function verifyLemonSqueezySignature(req) {
+  const secret = LEMON_SQUEEZY_EVENT_SECRET;
+  const hmac = crypto.createHmac("sha256", secret);
+  const digest = Buffer.from(hmac.update(req.rawBody).digest("hex"), "utf8");
+  const signature = Buffer.from(req.get("X-Signature") || "", "utf8");
+
+  if (!crypto.timingSafeEqual(digest, signature)) {
+    throw new Error("Invalid signature.");
+  }
+}
 
 exports.completion = functions.https.onRequest(async (req, res) => {
   console.log("Received completion request");
@@ -63,7 +73,6 @@ exports.completion = functions.https.onRequest(async (req, res) => {
 });
 
 exports.cancelSubscription = functions.https.onCall(async (data, context) => {
-  // Check if the user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError(
         "unauthenticated",
@@ -101,7 +110,6 @@ exports.cancelSubscription = functions.https.onCall(async (data, context) => {
       data: response.data,
     };
   } catch (error) {
-    // Handle errors
     if (error.response) {
       throw new functions.https.HttpsError(
           "failed-precondition",
@@ -118,7 +126,6 @@ exports.cancelSubscription = functions.https.onCall(async (data, context) => {
 
 exports.resumeSubscription = functions.https.onCall(async (data, context) => {
   console.log("Received resumeSubscription request");
-  // Check if the user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError(
         "unauthenticated",
@@ -169,7 +176,6 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.log("Error resuming subscription:", error.response.status);
-    // Handle errors
     if (error.response) {
       throw new functions.https.HttpsError(
           "failed-precondition",
@@ -187,34 +193,29 @@ exports.resumeSubscription = functions.https.onCall(async (data, context) => {
 
 exports.handleSubscriptionCreated = functions.https.onRequest(
     async (req, res) => {
-      console.log("Received subscription_created event");
-      const body = req.body;
-      const event = body.meta.event_name;
+      try {
+        verifyLemonSqueezySignature(req);
 
-      console.log(body);
+        console.log("Received subscription_created event");
+        const body = req.body;
+        const event = body.meta.event_name;
 
-      // Ensure we're handling the correct type of event
-      if (event === "subscription_created") {
-        const userId = body.meta.custom_data.user_id;
-        const paymentDate = body.data.attributes.created_at;
-        const subscriptionId = body.data.id;
-        const customerId = body.data.attributes.customer_id;
-        const expiresAt = body.data.attributes.ends_at;
-        const renewsAt = body.data.attributes.renews_at;
-        // const status = body.data.attributes.status;
+        if (event === "subscription_created") {
+          const userId = body.meta.custom_data.user_id;
+          const paymentDate = body.data.attributes.created_at;
+          const subscriptionId = body.data.id;
+          const customerId = body.data.attributes.customer_id;
+          const expiresAt = body.data.attributes.ends_at;
+          const renewsAt = body.data.attributes.renews_at;
 
-        try {
-        // Get the user document by uid
           const userDocRef = admin.firestore().collection("users").doc(userId);
-
-          // Check if the document exists
           const userDoc = await userDocRef.get();
+
           if (!userDoc.exists) {
             console.error("No matching user found for uid:", userId);
             return res.status(404).send("No matching user found");
           }
 
-          // Update the user document with the subscription details
           await userDocRef.set(
               {
                 paidAt: paymentDate,
@@ -229,34 +230,32 @@ exports.handleSubscriptionCreated = functions.https.onRequest(
 
           console.log("Subscription created successfully");
           res.status(200).send("Subscription created successfully");
-        } catch (error) {
-          console.error("Error updating Firestore:", error);
-          res.status(500).send("Failed to create subscription");
+        } else {
+          console.error("Unhandled event type");
+          res.status(400).send("Unhandled event type");
         }
-      } else {
-        console.error("Unhandled event type");
-        res.status(400).send("Unhandled event type");
+      } catch (error) {
+        console.error("Error processing event:", error.message || error);
+        res.status(500).send("Internal Server Error");
       }
     },
 );
 
 exports.handleSubscriptionCancelled = functions.https.onRequest(
     async (req, res) => {
-      console.log("Received subscription_cancelled event");
       try {
-      // Verify that the request is a POST request
+        verifyLemonSqueezySignature(req);
+
+        console.log("Received subscription_cancelled event");
         if (req.method !== "POST") {
           return res.status(405).send("Method Not Allowed");
         }
-
-        // Signature verification logic removed
 
         const body = req.body;
         console.log("Body: ", body);
         const event = body.meta.event_name;
         console.log("Event: ", event);
 
-        // Check if the event type is 'subscription_cancelled'
         if (event !== "subscription_cancelled") {
           return res
               .status(400)
@@ -269,17 +268,14 @@ exports.handleSubscriptionCancelled = functions.https.onRequest(
         const expiresAt = body.data.attributes.ends_at;
         const renewsAt = body.data.attributes.renews_at;
 
-        // Get the user document by uid
         const userDocRef = admin.firestore().collection("users").doc(userId);
-
-        // Check if the document exists
         const userDoc = await userDocRef.get();
+
         if (!userDoc.exists) {
           console.error("No matching user found for uid:", userId);
           return res.status(404).send("No matching user found");
         }
 
-        // Update the user document with the cancellation details
         await userDocRef.set(
             {
               paidAt: paymentDate,
@@ -292,7 +288,6 @@ exports.handleSubscriptionCancelled = functions.https.onRequest(
             {merge: true},
         );
 
-        // Respond with success
         res.status(200).send("User subscription status updated successfully");
       } catch (error) {
         console.error(
@@ -306,21 +301,19 @@ exports.handleSubscriptionCancelled = functions.https.onRequest(
 
 exports.handleSubscriptionExpired = functions.https.onRequest(
     async (req, res) => {
-      console.log("Received subscription_expired event");
       try {
-      // Verify that the request is a POST request
+        verifyLemonSqueezySignature(req);
+
+        console.log("Received subscription_expired event");
         if (req.method !== "POST") {
           return res.status(405).send("Method Not Allowed");
         }
-
-        // Signature verification logic removed
 
         const body = req.body;
         console.log("Body: ", body);
         const event = body.meta.event_name;
         console.log("Event: ", event);
 
-        // Check if the event type is 'subscription_expired'
         if (event !== "subscription_expired") {
           return res
               .status(400)
@@ -331,17 +324,14 @@ exports.handleSubscriptionExpired = functions.https.onRequest(
         const paymentDate = body.data.attributes.created_at;
         const customerId = body.data.attributes.customer_id;
 
-        // Get the user document by uid
         const userDocRef = admin.firestore().collection("users").doc(userId);
-
-        // Check if the document exists
         const userDoc = await userDocRef.get();
+
         if (!userDoc.exists) {
           console.error("No matching user found for uid:", userId);
           return res.status(404).send("No matching user found");
         }
 
-        // Update the user document with the expiration details
         await userDocRef.set(
             {
               paidAt: paymentDate,
@@ -351,7 +341,6 @@ exports.handleSubscriptionExpired = functions.https.onRequest(
             {merge: true},
         );
 
-        // Respond with success
         return res
             .status(200)
             .send("User subscription status updated to expired successfully");
@@ -367,21 +356,19 @@ exports.handleSubscriptionExpired = functions.https.onRequest(
 
 exports.handleSubscriptionResumed = functions.https.onRequest(
     async (req, res) => {
-      console.log("Received subscription_resumed event");
       try {
-      // Verify that the request is a POST request
+        verifyLemonSqueezySignature(req);
+
+        console.log("Received subscription_resumed event");
         if (req.method !== "POST") {
           return res.status(405).send("Method Not Allowed");
         }
-
-        // Signature verification logic removed
 
         const body = req.body;
         console.log("Body: ", body);
         const event = body.meta.event_name;
         console.log("Event: ", event);
 
-        // Check if the event type is 'subscription_resumed'
         if (event !== "subscription_resumed") {
           return res
               .status(400)
@@ -395,17 +382,14 @@ exports.handleSubscriptionResumed = functions.https.onRequest(
         const renewedAt = body.data.attributes.updated_at;
         const renewsAt = body.data.attributes.renews_at;
 
-        // Get the user document by uid
         const userDocRef = admin.firestore().collection("users").doc(userId);
-
-        // Check if the document exists
         const userDoc = await userDocRef.get();
+
         if (!userDoc.exists) {
           console.error("No matching user found for uid:", userId);
           return res.status(404).send("No matching user found");
         }
 
-        // Update the user document with the resumed subscription details
         await userDocRef.set(
             {
               paidAt: resumedDate,
@@ -418,7 +402,6 @@ exports.handleSubscriptionResumed = functions.https.onRequest(
             {merge: true},
         );
 
-        // Respond with success
         return res
             .status(200)
             .send("User subscription status updated to active successfully");
