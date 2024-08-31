@@ -1,5 +1,5 @@
 // This content script will only run on pages with URLs as defined in the manifest.json
-console.log("Zifty has injected a content script into this page.");
+//console.log("Zifty has injected a content script into this page.");
 
 let isSubscribed = null;
 
@@ -9,16 +9,16 @@ function sleep(ms) {
 
 async function waitForNotNull(variableAccessor, interval = 1000) {
   while (variableAccessor() === null) {
-    console.log("isSubscribed :", isSubscribed);
+    //console.log("isSubscribed :", isSubscribed);
     await sleep(interval); // sleep for the specified interval (default is 1 second)
   }
-  console.log("Got subscription status");
+  //console.log("Got subscription status");
 }
 
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "isSubscribed") {
-    console.log("Received subscription status from background");
-    console.log("isSubscribed:", request.isSubscribed);
+    //console.log("Received subscription status from background");
+    //console.log("isSubscribed:", request.isSubscribed);
     isSubscribed = request.isSubscribed;
   }
 });
@@ -40,11 +40,11 @@ let ziftyOverlay; // Holds the Zifty overlay element
 
 // When a page loads, send a message to the background script asking for the relevant listings
 window.addEventListener("load", async () => {
-  console.log("Page loaded");
+  //console.log("Page loaded");
   chrome.runtime.sendMessage({ message: "isUserSubscribed" });
   await waitForNotNull(() => isSubscribed);
   if (!isSupportedSite()) {
-    console.log("This page is not supported by Zifty");
+    //console.log("This page is not supported by Zifty");
     return;
   }
 
@@ -53,7 +53,14 @@ window.addEventListener("load", async () => {
 
     // If the search query is the same as the previous search query (e.g. URL changes due to pagination), return
     if (searchDetails.query === currentSearchDetails.query) {
-      console.log("Search details are the same as before, returning");
+      if (!document.getElementById("zifty-overlay")) {
+        ziftyOverlay = createZiftyOverlay();
+        populateOverlay(
+          { data: listingsData, query: searchDetails.query },
+          ziftyOverlay
+        );
+      }
+      //console.log("Search details are the same as before, returning");
       return;
     }
 
@@ -71,9 +78,17 @@ chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === "URL changed") {
     chrome.runtime.sendMessage({ message: "isUserSubscribed" });
     await waitForNotNull(() => isSubscribed);
-    console.log("URL changed");
+    //console.log("URL changed");
     if (!isSupportedSite()) {
-      console.log("This page is not supported by Zifty");
+      //console.log("This page is not supported by Zifty");
+      try {
+        const overlay = document.getElementById("zifty-overlay");
+        if (overlay) {
+          document.body.removeChild(overlay);
+        }
+      } catch (error) {
+        console.error("Error removing overlay", error);
+      }
       return;
     }
 
@@ -82,7 +97,14 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
       // If the search query is the same as the previous search query (e.g. URL changes due to pagination), return
       if (searchDetails.query === currentSearchDetails.query) {
-        console.log("Search details are the same as before, returning");
+        if (!document.getElementById("zifty-overlay")) {
+          ziftyOverlay = createZiftyOverlay();
+          populateOverlay(
+            { data: listingsData, query: searchDetails.query },
+            ziftyOverlay
+          );
+        }
+        //console.log("Search details are the same as before, returning");
         return;
       }
 
@@ -95,28 +117,28 @@ chrome.runtime.onMessage.addListener(async (request) => {
     ziftyOverlay = createZiftyOverlay();
   } else if (request.message === "Listings") {
     // Once background has the listings data from an external datasource (e.g. Facebook Marketplace API) it sends them to content
-    console.log(`Received ${request.data.length} listings from background`);
+    //console.log(`Received ${request.data.length} listings from background`);
     sendingSearchDetailsToBackground = false; // Set the flag to false after receiving the listings
 
     // If the listings are the same as the previous listings, return
     if (listingsData === request.data) {
-      console.log("Listings are the same as before, returning");
+      //console.log("Listings are the same as before, returning");
       return;
     }
 
     listingsData = request.data; // Otherwise update listingsData with the new listings
 
     // Then populate the Zifty overlay with the listings
-    console.log(
-      `Populating overlay with ${request.data.length} listings for "${request.query}"`
-    );
+    //console.log(
+    //   `Populating overlay with ${request.data.length} listings for "${request.query}"`
+    // );
     populateOverlay(request, ziftyOverlay);
   }
 });
 
 function createZiftyOverlay() {
   if (document.getElementById("zifty-overlay")) {
-    console.log("Removing existing overlay first");
+    //console.log("Removing existing overlay first");
     document.body.removeChild(document.getElementById("zifty-overlay"));
   }
   const overlay = createOverlay();
@@ -129,7 +151,7 @@ function sendSearchDetailsToBackground(searchDetails) {
   // Only send the message if it has not been sent already
   if (!sendingSearchDetailsToBackground) {
     const message = { type: "searchDetails", data: searchDetails };
-    console.log("Sending search details to background", message);
+    //console.log("Sending search details to background", message);
     chrome.runtime.sendMessage(message);
     sendingSearchDetailsToBackground = true; // Set the flag to true after sending the message
   }
@@ -140,30 +162,32 @@ function getSearchDetails() {
   let searchDetails = { page: null, query: null };
   const url = new URL(window.location.href);
   const hostname = url.hostname;
-  console.log("Getting search details for", hostname);
+  //console.log("Getting search details for", hostname);
 
   if (/\.amazon\./.test(hostname)) {
-    console.log("Amazon search page detected");
+    //console.log("Amazon search page detected");
     searchDetails.page = "amazon";
     searchDetails.query = extractQueryParamValue(url.href, "k");
   } else if (/\.walmart\./.test(hostname)) {
-    console.log("Walmart search page detected");
+    //console.log("Walmart search page detected");
     searchDetails.page = "walmart";
-    searchDetails.query = extractQueryParamValue(url.href, "q");
+    searchDetails.query =
+      extractQueryParamValue(url.href, "query") ||
+      extractQueryParamValue(url.href, "q");
   } else if (/\.takealot\./.test(hostname)) {
-    console.log("Takealot search page detected");
+    //console.log("Takealot search page detected");
     searchDetails.page = "takealot";
     searchDetails.query = extractQueryParamValue(url.href, "qsearch");
   } else if (/\.bol\./.test(hostname)) {
-    console.log("Bol search page detected");
+    //console.log("Bol search page detected");
     searchDetails.page = "bol";
     searchDetails.query = extractQueryParamValue(url.href, "searchtext");
   } else if (/\.google\./.test(hostname)) {
-    console.log("Google search page detected");
+    //console.log("Google search page detected");
     searchDetails.page = "google";
     searchDetails.query = extractQueryParamValue(url.href, "q");
   } else if (/\.bing\./.test(hostname)) {
-    console.log("Bing search page detected");
+    //console.log("Bing search page detected");
     searchDetails.page = "bing";
     searchDetails.query = extractQueryParamValue(url.href, "q");
   }
@@ -176,7 +200,7 @@ function extractQueryParamValue(url, queryParamName) {
   const queryParams = new URLSearchParams(urlObj.search);
   let query = queryParams.get(queryParamName);
   if (query === null) {
-    console.log(`Could not find query ${queryParamName} in URL`);
+    //console.log(`Could not find query ${queryParamName} in URL`);
   } else {
     query = query.toLowerCase().trim();
   }
@@ -218,9 +242,10 @@ function isSupportedSite() {
     bingBuyPanelExists;
 
   // If the user is subscribed, they get access to all free tier sites plus Google and Bing
-  console.log("isSubscribed:", isSubscribed);
+  //console.log("isSubscribed:", isSubscribed);
   const isFreeTierSite =
     (/^www\.amazon\./.test(url.hostname) && url.pathname === "/s") ||
+    (/^www\.walmart\./.test(url.hostname) && url.pathname === "/search/") ||
     (/^www\.walmart\./.test(url.hostname) && url.pathname === "/search") ||
     (/^www\.takealot\./.test(url.hostname) && url.pathname === "/all") ||
     (/^www\.bol\./.test(url.hostname) && url.pathname === "/nl/nl/s/");
@@ -328,7 +353,7 @@ function createNextArrow(request, overlay) {
 }
 
 function removeNextArrow(overlay) {
-  console.log("Removing next arrow");
+  //console.log("Removing next arrow");
   const nextArrow = overlay.querySelector("#next-arrow-container");
   if (nextArrow) {
     nextArrow.parentNode.removeChild(nextArrow);
@@ -371,7 +396,7 @@ function createPreviousArrow(request, overlay) {
 }
 
 function removePreviousArrow(overlay) {
-  console.log("Removing previous arrow");
+  //console.log("Removing previous arrow");
   const previousArrow = overlay.querySelector("#previous-arrow-container");
   if (previousArrow) {
     previousArrow.parentNode.removeChild(previousArrow);
