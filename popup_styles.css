@@ -41,13 +41,16 @@
 
 body {
   font-family: Arial, sans-serif;
-  width: 300px;
+  width: 450px;
   padding: 10px;
 }
 .content {
   margin-top: 10px;
 }
 p {
+  font-size: large;
+}
+li {
   font-size: large;
 }
 
