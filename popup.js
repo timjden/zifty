@@ -31,7 +31,7 @@ function updateUI(
       } else {
         subscriptionButton.textContent = "Cancel Subscription 😔";
         subscriptionMessage.innerHTML =
-          'Thanks for being a Zifty subscriber! 🎉 Try <a href="https://www.google.com/search?q=buy+a+kettle+near+me" target="_blank">now</a>.';
+          'Thanks for being a Zifty subscriber! 🎉 <br> Try with Google <a href="https://www.google.com/search?q=buy%20electric%20scooter%20near%20me" target="_blank">now</a>.';
         subscriptionButton.removeEventListener("click", handleSubscribe);
         subscriptionButton.removeEventListener("click", handleResume);
         subscriptionButton.addEventListener("click", handleCancel);
