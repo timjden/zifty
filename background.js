@@ -29,21 +29,6 @@ const functions = getFunctions(app);
 
 //console.log("Zifty background script is running.");
 
-// Alert user that Edge is not supported
-function detectEdgeBrowser() {
-  const userAgent = navigator.userAgent;
-  const isEdge = userAgent.includes("Edg");
-
-  if (isEdge) {
-    //console.log("This extension is not supported on Microsoft Edge.");
-    alert(
-      "This extension is not supported on Microsoft Edge. Please use Google Chrome."
-    );
-  }
-}
-
-detectEdgeBrowser();
-
 // Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   if (tab.url && tab.status === "complete" && tab.active) {
