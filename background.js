@@ -347,6 +347,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   };
 
+  const checkBrowser = async () => {
+    const isChrome = navigator.userAgentData.brands.some(
+      (brand) => brand.brand === "Google Chrome"
+    );
+    if (!isChrome) {
+      sendResponse({ isChrome: false });
+    }
+    sendResponse({ isChrome: true });
+  };
+
   if (request.type === "searchDetails") {
     handleSearchDetails();
   } else if (request.message === "isUserSubscribed") {
@@ -363,6 +373,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleCancel();
   } else if (request.message === "createSubscription") {
     handleCreateSubscription();
+  } else if (request.message === "checkBrowser") {
+    checkBrowser();
   }
 
   return true; // Keep the message channel open for asynchronous response
