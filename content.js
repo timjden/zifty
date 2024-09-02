@@ -287,6 +287,9 @@ function isSupportedSite() {
     (/^www\.walmart\./.test(url.hostname) && url.pathname === "/search") ||
     (/^www\.takealot\./.test(url.hostname) && url.pathname === "/all") ||
     (/^www\.bol\./.test(url.hostname) && url.pathname === "/nl/nl/s/") ||
+    (/^www\.bol\./.test(url.hostname) && url.pathname === "/nl/fr/s/") ||
+    (/^www\.bol\./.test(url.hostname) && url.pathname === "/be/nl/s/") ||
+    (/^www\.bol\./.test(url.hostname) && url.pathname === "/be/fr/s/") ||
     (/^www\.temu\./.test(url.hostname) &&
       url.pathname === "/search_result.html") ||
     (/^www\.aliexpress\./.test(url.hostname) &&
