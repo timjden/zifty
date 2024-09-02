@@ -354,6 +354,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!isChrome) {
       sendResponse({ isChrome: false });
     }
+    if (sender.tab) {
+      chrome.tabs.sendMessage(sender.tab.id, {
+        message: "isSupportedBrowser",
+        isSupportedBrowser: true,
+      });
+    }
     sendResponse({ isChrome: true });
   };
 
