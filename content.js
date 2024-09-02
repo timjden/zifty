@@ -21,6 +21,10 @@ chrome.runtime.onMessage.addListener((request) => {
     //console.log("Received subscription status from background");
     //console.log("isSubscribed:", request.isSubscribed);
     isSubscribed = request.isSubscribed;
+  } else if (request.message === "isSupportedBrowser") {
+    //console.log("Received supported browser status from background");
+    //console.log("isSupportedBrowser:", request.isSupportedBrowser);
+    isSupportedBrowser = request.isSupportedBrowser;
   }
 });
 
@@ -183,6 +187,12 @@ function getSearchDetails() {
     //console.log("Takealot search page detected");
     searchDetails.page = "takealot";
     searchDetails.query = extractQueryParamValue(url.href, "qsearch");
+  } else if (/\.temu\./.test(hostname)) {
+    searchDetails.page = "temu";
+    searchDetails.query = extractQueryParamValue(url.href, "search_key");
+  } else if (/\.aliexpress\./.test(hostname)) {
+    searchDetails.page = "aliexpress";
+    searchDetails.query = extractAliExpressSearchQuery(url);
   } else if (/\.bol\./.test(hostname)) {
     //console.log("Bol search page detected");
     searchDetails.page = "bol";
@@ -210,6 +220,24 @@ function extractQueryParamValue(url, queryParamName) {
     query = query.toLowerCase().trim();
   }
   return query;
+}
+
+function extractAliExpressSearchQuery(url) {
+  // Create a URL object
+  const urlObj = new URL(url);
+
+  // Get the pathname part of the URL
+  const pathname = urlObj.pathname;
+
+  // Extract the word or phrase between "wholesale-" and ".html"
+  const match = pathname.match(/wholesale-(.*)\.html/);
+
+  // If there's a match, replace dashes with spaces
+  if (match && match[1]) {
+    return match[1].replace(/-/g, " ");
+  } else {
+    return null; // Return null if the pattern doesn't match
+  }
 }
 
 function isSupportedSite() {
@@ -249,7 +277,8 @@ function isSupportedSite() {
     /^www\.bing\./.test(url.hostname) &&
     url.pathname === "/search" &&
     bingBuyPanelExists;
-
+  //console.log("URL PATHNAME");
+  //console.log(url.pathname);
   // If the user is subscribed, they get access to all free tier sites plus Google and Bing
   //console.log("isSubscribed:", isSubscribed);
   const isFreeTierSite =
@@ -257,7 +286,11 @@ function isSupportedSite() {
     (/^www\.walmart\./.test(url.hostname) && url.pathname === "/search/") ||
     (/^www\.walmart\./.test(url.hostname) && url.pathname === "/search") ||
     (/^www\.takealot\./.test(url.hostname) && url.pathname === "/all") ||
-    (/^www\.bol\./.test(url.hostname) && url.pathname === "/nl/nl/s/");
+    (/^www\.bol\./.test(url.hostname) && url.pathname === "/nl/nl/s/") ||
+    (/^www\.temu\./.test(url.hostname) &&
+      url.pathname === "/search_result.html") ||
+    (/^www\.aliexpress\./.test(url.hostname) &&
+      /\/wholesale-/.test(url.pathname));
   const isPaidTierSite = isGoogleSearchBuyPage || isBingSearchBuyPage;
   let result;
   if (isSubscribed) {
