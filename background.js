@@ -244,7 +244,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (!userDoc.exists()) {
         await setDoc(userDocRef, {
           uid: user.uid,
-          email: user.email,
+          // email: user.email, // Not needed for now
           paidAt: null,
           cancelledAt: null,
           subscriptionId: null,
