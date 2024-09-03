@@ -12,7 +12,9 @@ function updateUI(
   handleResume,
   handleCancel
 ) {
+  console.log("Updating UI with response:", response);
   if (response.isUserSignedIn) {
+    console.log("User is signed in. Updating UI...");
     authButton.textContent = "Logout";
     authButton.removeEventListener("click", handleSignIn);
     authButton.addEventListener("click", handleLogout);
@@ -21,7 +23,15 @@ function updateUI(
     signUpMessage.textContent = "";
 
     if (response.hasSubscription) {
+      console.log("Subscription found. Updating UI...");
+      // Display toggles for Chrome and Bing
+      console.log("Hiding toggles...");
+      document.getElementsByClassName("premium-switch")[0].style.display =
+        "inline-block";
+      document.getElementsByClassName("premium-switch")[1].style.display =
+        "inline-block";
       if (response.isSubscriptionCancelled) {
+        console.log("Subscription is cancelled. Updating UI...");
         subscriptionButton.textContent = "Resume Subscription";
         subscriptionMessage.innerHTML =
           "Your subscription has been cancelled and will expire soon.";
@@ -29,6 +39,7 @@ function updateUI(
         subscriptionButton.removeEventListener("click", handleCancel);
         subscriptionButton.addEventListener("click", handleResume);
       } else {
+        console.log("Subscription is active. Updating UI...");
         subscriptionButton.textContent = "Cancel Subscription 😔";
         subscriptionMessage.innerHTML =
           'Thanks for being a Zifty subscriber! 🎉 <br> Try with Google <a href="https://www.google.com/search?q=buy%20electric%20scooter%20near%20me" target="_blank">now</a>.';
@@ -37,14 +48,23 @@ function updateUI(
         subscriptionButton.addEventListener("click", handleCancel);
       }
     } else {
+      console.log("No subscription found. Updating UI...");
       subscriptionButton.textContent = "💳 Subscribe";
       subscriptionMessage.textContent =
         "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
       subscriptionButton.removeEventListener("click", handleResume);
       subscriptionButton.addEventListener("click", handleSubscribe);
+
+      // Also remove toggles for Chrome and Bing
+      console.log("No subscription found. Hiding toggles...");
+      document.getElementsByClassName("premium-switch")[0].style.display =
+        "none";
+      document.getElementsByClassName("premium-switch")[1].style.display =
+        "none";
     }
   } else {
+    console.log("User is not signed in. Updating UI...");
     authButton.innerHTML =
       '<img src="./assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>';
     authButton.removeEventListener("click", handleLogout);
@@ -53,6 +73,11 @@ function updateUI(
     signUpMessage.textContent =
       "Sign in and subscribe to access premium features!";
     subscriptionContainer.style.display = "none";
+
+    // Also remove toggles for Chrome and Bing
+    console.log("Hiding toggles...");
+    document.getElementsByClassName("premium-switch")[0].style.display = "none";
+    document.getElementsByClassName("premium-switch")[1].style.display = "none";
   }
 }
 
