@@ -27,29 +27,23 @@ function handleToggleChange(event) {
 }
 
 document
-  .getElementById("amazonToggle")
+  .getElementById("amazon")
   .addEventListener("change", handleToggleChange);
 document
-  .getElementById("walmartToggle")
+  .getElementById("walmart")
   .addEventListener("change", handleToggleChange);
 document
-  .getElementById("takealotToggle")
+  .getElementById("takealot")
+  .addEventListener("change", handleToggleChange);
+document.getElementById("bol").addEventListener("change", handleToggleChange);
+document.getElementById("temu").addEventListener("change", handleToggleChange);
+document
+  .getElementById("aliexpress")
   .addEventListener("change", handleToggleChange);
 document
-  .getElementById("bolToggle")
+  .getElementById("google")
   .addEventListener("change", handleToggleChange);
-document
-  .getElementById("temuToggle")
-  .addEventListener("change", handleToggleChange);
-document
-  .getElementById("aliexpressToggle")
-  .addEventListener("change", handleToggleChange);
-document
-  .getElementById("googleToggle")
-  .addEventListener("change", handleToggleChange);
-document
-  .getElementById("bingToggle")
-  .addEventListener("change", handleToggleChange);
+document.getElementById("bing").addEventListener("change", handleToggleChange);
 
 function updateUI(
   response,
@@ -63,16 +57,17 @@ function updateUI(
 
   // Function to update the toggle states
   function updateToggleStates(toggleStatuses) {
+    console.log("Updating toggle states with:", toggleStatuses);
     // Map of toggle IDs to their corresponding statuses in the response
     const toggleMap = {
-      amazonToggle: toggleStatuses.amazon,
-      walmartToggle: toggleStatuses.walmart,
-      takealotToggle: toggleStatuses.takealot,
-      bolToggle: toggleStatuses.bol,
-      temuToggle: toggleStatuses.temu,
-      aliexpressToggle: toggleStatuses.aliexpress,
-      googleToggle: toggleStatuses.google,
-      bingToggle: toggleStatuses.bing,
+      amazon: toggleStatuses.amazon ?? true, // Default to "on"
+      walmart: toggleStatuses.walmart ?? true, // Default to "on"
+      takealot: toggleStatuses.takealot ?? true, // Default to "on"
+      bol: toggleStatuses.bol ?? true, // Default to "on"
+      temu: toggleStatuses.temu ?? true, // Default to "on"
+      aliexpress: toggleStatuses.aliexpress ?? true, // Default to "on"
+      google: toggleStatuses.google ?? true, // Default to "on"
+      bing: toggleStatuses.bing ?? true, // Default to "on"
     };
 
     // Iterate through each toggle and update its state
@@ -88,7 +83,7 @@ function updateUI(
   }
 
   if (response.isUserSignedIn) {
-    //console.log("User is signed in. Updating UI...");
+    console.log("User is signed in. Updating UI...");
     authButton.textContent = "Logout";
     authButton.removeEventListener("click", handleSignIn);
     authButton.addEventListener("click", handleLogout);
@@ -98,6 +93,18 @@ function updateUI(
 
     // Update toggle states based on response
     updateToggleStates(response.toggleStatuses);
+
+    const leftToggles = Array.from(
+      document.getElementsByClassName("left-switch")
+    );
+    const rightToggles = Array.from(
+      document.getElementsByClassName("right-switch")
+    );
+    const toggles = [...leftToggles, ...rightToggles];
+    console.log(toggles);
+    for (let i = 0; i < toggles.length; i++) {
+      toggles[i].style.display = "inline-block";
+    }
 
     if (response.hasSubscription) {
       //console.log("Subscription found. Updating UI...");
@@ -154,6 +161,17 @@ function updateUI(
 
     // Hide toggles for Google and Bing
     //console.log("Hiding toggles for premium features...");
+    const leftToggles = Array.from(
+      document.getElementsByClassName("left-switch")
+    );
+    const rightToggles = Array.from(
+      document.getElementsByClassName("right-switch")
+    );
+    const toggles = [...leftToggles, ...rightToggles];
+    console.log(toggles);
+    for (let i = 0; i < toggles.length; i++) {
+      toggles[i].style.display = "none";
+    }
     document.getElementsByClassName("premium-switch")[0].style.display = "none";
     document.getElementsByClassName("premium-switch")[1].style.display = "none";
   }
