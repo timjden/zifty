@@ -128,12 +128,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       isSubscriptionActive: false,
       isSubscriptionCancelled: false,
       toggleStatuses: {
-        amazon: false,
-        walmart: false,
-        takealot: false,
-        bol: false,
-        temu: false,
-        aliexpress: false,
+        amazon: true,
+        walmart: true,
+        takealot: true,
+        bol: true,
+        temu: true,
+        aliexpress: true,
         google: false,
         bing: false,
       },
@@ -155,6 +155,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
 
       if (user) {
+        console.log("User:", user);
         // Refresh token logic
         await user.getIdToken(true); // Force refresh the token to ensure it is up-to-date
 
@@ -175,19 +176,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            sessionDetails.toggleStatuses.amazon =
-              userData.amazonToggle || false;
-            sessionDetails.toggleStatuses.walmart =
-              userData.walmartToggle || false;
-            sessionDetails.toggleStatuses.takealot =
-              userData.takealotToggle || false;
-            sessionDetails.toggleStatuses.bol = userData.bolToggle || false;
-            sessionDetails.toggleStatuses.temu = userData.temuToggle || false;
+            console.log("User data:", userData);
+            sessionDetails.toggleStatuses.amazon = userData.amazon || false;
+            sessionDetails.toggleStatuses.walmart = userData.walmart || false;
+            sessionDetails.toggleStatuses.takealot = userData.takealot || false;
+            sessionDetails.toggleStatuses.bol = userData.bol || false;
+            sessionDetails.toggleStatuses.temu = userData.temu || false;
             sessionDetails.toggleStatuses.aliexpress =
-              userData.aliexpressToggle || false;
-            sessionDetails.toggleStatuses.google =
-              userData.googleToggle || false;
-            sessionDetails.toggleStatuses.bing = userData.bingToggle || false;
+              userData.aliexpress || false;
+            sessionDetails.toggleStatuses.google = userData.google || false;
+            sessionDetails.toggleStatuses.bing = userData.bing || false;
           } else {
             //console.log("User document does not exist.");
           }
@@ -198,10 +196,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           //     : "User has a subscription and has not cancelled."
           // );
         } else {
-          //console.log("User is not subscribed.");
+          console.log("User is not subscribed.");
+          // Fetch the toggle statuses from individual fields in the user's document
+          const userDocRef = doc(db, "users", user.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            console.log("User data:", userData);
+            sessionDetails.toggleStatuses.amazon = userData.amazon || false;
+            sessionDetails.toggleStatuses.walmart = userData.walmart || false;
+            sessionDetails.toggleStatuses.takealot = userData.takealot || false;
+            sessionDetails.toggleStatuses.bol = userData.bol || false;
+            sessionDetails.toggleStatuses.temu = userData.temu || false;
+            sessionDetails.toggleStatuses.aliexpress =
+              userData.aliexpress || false;
+            sessionDetails.toggleStatuses.google = userData.google || false;
+            sessionDetails.toggleStatuses.bing = userData.bing || false;
+          } else {
+            console.log("User document does not exist.");
+          }
         }
       } else {
-        //console.log("User is not signed in.");
+        console.log("User is not signed in.");
       }
     } catch (error) {
       console.error("Error handling session details:", error);
@@ -250,6 +267,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           subscriptionId: null,
           status: null,
           customerId: null,
+          amazon: true,
+          walmart: true,
+          takealot: true,
+          bol: true,
+          temu: true,
+          aliexpress: true,
+          google: false,
+          bing: false,
         });
         //console.log("User added to Firestore:", user.uid);
       }
