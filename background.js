@@ -124,6 +124,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       hasSubscription: false,
       isSubscriptionActive: false,
       isSubscriptionCancelled: false,
+      toggleStatuses: {
+        amazon: false,
+        walmart: false,
+        takealot: false,
+        bol: false,
+        temu: false,
+        aliexpress: false,
+        google: false,
+        bing: false,
+      },
     };
 
     try {
@@ -155,6 +165,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           const isCancelled = await isUserCancelled(user.uid);
           sessionDetails.isSubscriptionActive = !isCancelled;
           sessionDetails.isSubscriptionCancelled = isCancelled;
+
+          // Fetch the toggle statuses from individual fields in the user's document
+          const userDocRef = doc(db, "users", user.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            sessionDetails.toggleStatuses.amazon =
+              userData.amazonToggle || false;
+            sessionDetails.toggleStatuses.walmart =
+              userData.walmartToggle || false;
+            sessionDetails.toggleStatuses.takealot =
+              userData.takealotToggle || false;
+            sessionDetails.toggleStatuses.bol = userData.bolToggle || false;
+            sessionDetails.toggleStatuses.temu = userData.temuToggle || false;
+            sessionDetails.toggleStatuses.aliexpress =
+              userData.aliexpressToggle || false;
+            sessionDetails.toggleStatuses.google =
+              userData.googleToggle || false;
+            sessionDetails.toggleStatuses.bing = userData.bingToggle || false;
+          } else {
+            console.log("User document does not exist.");
+          }
 
           //console.log(
           //   isCancelled
@@ -363,6 +396,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ isChrome: true });
   };
 
+  const handleToggleChange = async (toggleId, isChecked) => {
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        throw new Error("User is not authenticated.");
+      }
+
+      const userDocRef = doc(db, "users", user.uid);
+
+      // Create an object to store the toggle status
+      const updateData = {};
+      updateData[toggleId] = isChecked; // Dynamically set the field name and value
+
+      // Store the updated toggle status directly in the Firestore document
+      await setDoc(
+        userDocRef,
+        updateData,
+        { merge: true } // Merge with existing data in the document
+      );
+
+      console.log(`Toggle status for ${toggleId} stored successfully.`);
+      return { success: true };
+    } catch (error) {
+      console.error(
+        `Failed to store toggle status for ${toggleId}:`,
+        error.message || error
+      );
+      return { success: false, error: error.message || error };
+    }
+  };
+
   if (request.type === "searchDetails") {
     handleSearchDetails();
   } else if (request.message === "isUserSubscribed") {
@@ -381,6 +446,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleCreateSubscription();
   } else if (request.message === "checkBrowser") {
     checkBrowser();
+  } else if (request.message === "toggleChange") {
+    const { toggleId, isChecked } = request;
+    handleToggleChange(toggleId, isChecked);
   }
 
   return true; // Keep the message channel open for asynchronous response
