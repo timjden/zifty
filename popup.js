@@ -10,14 +10,14 @@ function handleToggleChange(event) {
   const toggleId = event.target.id; // Get the ID of the toggle switch
 
   if (isChecked) {
-    console.log(`${toggleId} is ON`);
+    //console.log(`${toggleId} is ON`);
     chrome.runtime.sendMessage({
       message: "toggleChange",
       toggleId,
       isChecked,
     });
   } else {
-    console.log(`${toggleId} is OFF`);
+    //console.log(`${toggleId} is OFF`);
     chrome.runtime.sendMessage({
       message: "toggleChange",
       toggleId,
@@ -59,7 +59,7 @@ function updateUI(
   handleResume,
   handleCancel
 ) {
-  console.log("Updating UI with response:", response);
+  //console.log("Updating UI with response:", response);
 
   // Function to update the toggle states
   function updateToggleStates(toggleStatuses) {
@@ -80,7 +80,7 @@ function updateUI(
       const toggleElement = document.getElementById(toggleId);
       if (toggleElement) {
         toggleElement.checked = isChecked;
-        console.log(`Set ${toggleId} to ${isChecked ? "ON" : "OFF"}`);
+        //console.log(`Set ${toggleId} to ${isChecked ? "ON" : "OFF"}`);
       } else {
         console.error(`Toggle element with ID ${toggleId} not found.`);
       }
@@ -88,7 +88,7 @@ function updateUI(
   }
 
   if (response.isUserSignedIn) {
-    console.log("User is signed in. Updating UI...");
+    //console.log("User is signed in. Updating UI...");
     authButton.textContent = "Logout";
     authButton.removeEventListener("click", handleSignIn);
     authButton.addEventListener("click", handleLogout);
@@ -100,16 +100,16 @@ function updateUI(
     updateToggleStates(response.toggleStatuses);
 
     if (response.hasSubscription) {
-      console.log("Subscription found. Updating UI...");
+      //console.log("Subscription found. Updating UI...");
       // Display toggles for Google and Bing
-      console.log("Displaying toggles for premium features...");
+      //console.log("Displaying toggles for premium features...");
       document.getElementsByClassName("premium-switch")[0].style.display =
         "inline-block";
       document.getElementsByClassName("premium-switch")[1].style.display =
         "inline-block";
 
       if (response.isSubscriptionCancelled) {
-        console.log("Subscription is cancelled. Updating UI...");
+        //console.log("Subscription is cancelled. Updating UI...");
         subscriptionButton.textContent = "Resume Subscription";
         subscriptionMessage.innerHTML =
           "Your subscription has been cancelled and will expire soon.";
@@ -117,7 +117,7 @@ function updateUI(
         subscriptionButton.removeEventListener("click", handleCancel);
         subscriptionButton.addEventListener("click", handleResume);
       } else {
-        console.log("Subscription is active. Updating UI...");
+        //console.log("Subscription is active. Updating UI...");
         subscriptionButton.textContent = "Cancel Subscription 😔";
         subscriptionMessage.innerHTML =
           'Thanks for being a Zifty subscriber! 🎉 <br> Try with Google <a href="https://www.google.com/search?q=buy%20electric%20scooter%20near%20me" target="_blank">now</a>.';
@@ -126,7 +126,7 @@ function updateUI(
         subscriptionButton.addEventListener("click", handleCancel);
       }
     } else {
-      console.log("No subscription found. Updating UI...");
+      //console.log("No subscription found. Updating UI...");
       subscriptionButton.textContent = "💳 Subscribe";
       subscriptionMessage.textContent =
         "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
@@ -135,16 +135,14 @@ function updateUI(
       subscriptionButton.addEventListener("click", handleSubscribe);
 
       // Hide toggles for Google and Bing
-      console.log(
-        "No subscription found. Hiding toggles for premium features..."
-      );
+      //console.log("No subscription found. Hiding toggles for premium features...");
       document.getElementsByClassName("premium-switch")[0].style.display =
         "none";
       document.getElementsByClassName("premium-switch")[1].style.display =
         "none";
     }
   } else {
-    console.log("User is not signed in. Updating UI...");
+    //console.log("User is not signed in. Updating UI...");
     authButton.innerHTML =
       '<img src="./assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>';
     authButton.removeEventListener("click", handleLogout);
@@ -155,7 +153,7 @@ function updateUI(
     subscriptionContainer.style.display = "none";
 
     // Hide toggles for Google and Bing
-    console.log("Hiding toggles for premium features...");
+    //console.log("Hiding toggles for premium features...");
     document.getElementsByClassName("premium-switch")[0].style.display = "none";
     document.getElementsByClassName("premium-switch")[1].style.display = "none";
   }
@@ -182,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Proceed with the rest of the code if the browser is supported
     chrome.runtime.sendMessage({ message: "getSessionDetails" }, (response) => {
-      console.log("Response from background:", response);
+      //console.log("Response from background:", response);
       updateUI(
         response,
         handleSignIn,
@@ -260,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
         (response) => {
           if (response.success) {
             try {
-              console.log("Redirecting to payment page...");
+              //console.log("Redirecting to payment page...");
               chrome.tabs.create({
                 url:
                   "https://zifty.lemonsqueezy.com/buy/fa2ee847-27be-4cab-88f8-09ff3b8d6890?checkout[custom][user_id]=" +

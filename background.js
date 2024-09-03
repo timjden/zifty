@@ -189,7 +189,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               userData.googleToggle || false;
             sessionDetails.toggleStatuses.bing = userData.bingToggle || false;
           } else {
-            console.log("User document does not exist.");
+            //console.log("User document does not exist.");
           }
 
           //console.log(
@@ -212,7 +212,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   const getSessionDetails = async () => {
     const sessionDetails = await getSessionFromDatabase();
-    console.log("Session details:", sessionDetails);
+    //console.log("Session details:", sessionDetails);
     sendResponse(sessionDetails); // Send the response after all async operations
     return sessionDetails;
   };
@@ -427,7 +427,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         { merge: true } // Merge with existing data in the document
       );
 
-      console.log(`Toggle status for ${toggleId} stored successfully.`);
+      //console.log(`Toggle status for ${toggleId} stored successfully.`);
       return { success: true };
     } catch (error) {
       console.error(

@@ -19,10 +19,10 @@ async function waitForNotNull(variableAccessor, interval = 1000) {
 
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "isSubscribed") {
-    // console.log("Received subscription status from background");
-    // console.log("isSubscribed:", request.isSubscribed);
-    // console.log("Received sessionDetails from background");
-    // console.log("sessionDetails:", request.sessionDetails);
+    //console.log("Received subscription status from background");
+    //console.log("isSubscribed:", request.isSubscribed);
+    //console.log("Received sessionDetails from background");
+    //console.log("sessionDetails:", request.sessionDetails);
     sessionDetails = request.sessionDetails;
     isSubscribed = request.isSubscribed;
   } else if (request.message === "isSupportedBrowser") {
@@ -246,7 +246,7 @@ function extractAliExpressSearchQuery(url) {
 
 function isSupportedSite() {
   if (!isSupportedBrowser) {
-    console.log("This browser is not supported.");
+    //console.log("This browser is not supported.");
     return false;
   }
   // Check if this is a Google search page with product listings
