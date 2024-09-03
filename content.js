@@ -288,34 +288,39 @@ function isSupportedSite() {
   const isFreeTierSite =
     (/^www\.amazon\./.test(url.hostname) &&
       url.pathname === "/s" &&
-      sessionDetails.toggleStatuses.amazon) ||
+      (sessionDetails.toggleStatuses.amazon ||
+        !sessionDetails.isUserSignedIn)) ||
     (/^www\.walmart\./.test(url.hostname) &&
       url.pathname === "/search/" &&
-      sessionDetails.toggleStatuses.walmart) ||
+      (sessionDetails.toggleStatuses.walmart ||
+        !sessionDetails.isUserSignedIn)) ||
     (/^www\.walmart\./.test(url.hostname) &&
       url.pathname === "/search" &&
-      sessionDetails.toggleStatuses.walmart) ||
+      (sessionDetails.toggleStatuses.walmart ||
+        !sessionDetails.isUserSignedIn)) ||
     (/^www\.takealot\./.test(url.hostname) &&
       url.pathname === "/all" &&
-      sessionDetails.toggleStatuses.takealot) ||
+      (sessionDetails.toggleStatuses.takealot ||
+        !sessionDetails.isUserSignedIn)) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/nl/nl/s/" &&
-      sessionDetails.toggleStatuses.bol) ||
+      (sessionDetails.toggleStatuses.bol || !sessionDetails.isUserSignedIn)) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/nl/fr/s/" &&
-      sessionDetails.toggleStatuses.bol) ||
+      (sessionDetails.toggleStatuses.bol || !sessionDetails.isUserSignedIn)) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/be/nl/s/" &&
-      sessionDetails.toggleStatuses.bol) ||
+      (sessionDetails.toggleStatuses.bol || !sessionDetails.isUserSignedIn)) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/be/fr/s/" &&
-      sessionDetails.toggleStatuses.bol) ||
+      (sessionDetails.toggleStatuses.bol || !sessionDetails.isUserSignedIn)) ||
     (/^www\.temu\./.test(url.hostname) &&
       url.pathname === "/search_result.html" &&
-      sessionDetails.toggleStatuses.temu) ||
+      (sessionDetails.toggleStatuses.temu || !sessionDetails.isUserSignedIn)) ||
     (/^www\.aliexpress\./.test(url.hostname) &&
       /\/wholesale-/.test(url.pathname) &&
-      sessionDetails.toggleStatuses.aliexpress);
+      (sessionDetails.toggleStatuses.aliexpress ||
+        !sessionDetails.isUserSignedIn));
   const isPaidTierSite =
     (isGoogleSearchBuyPage && sessionDetails.toggleStatuses.google) ||
     (isBingSearchBuyPage && sessionDetails.toggleStatuses.bing);
