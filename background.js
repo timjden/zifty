@@ -91,6 +91,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const handleIsUserSubscribed = async () => {
     try {
       //console.log("Checking if user is subscribed...");
+      const sessionDetails = await getSessionFromDatabase();
       const user = auth.currentUser;
       if (user) {
         //console.log("User:", user);
@@ -100,6 +101,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           chrome.tabs.sendMessage(sender.tab.id, {
             message: "isSubscribed",
             isSubscribed: response,
+            sessionDetails,
           });
         }
       } else {
@@ -108,6 +110,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           chrome.tabs.sendMessage(sender.tab.id, {
             message: "isSubscribed",
             isSubscribed: false,
+            sessionDetails,
           });
         }
       }
@@ -118,7 +121,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   };
 
-  const getSessionDetails = async () => {
+  async function getSessionFromDatabase() {
     const sessionDetails = {
       isUserSignedIn: false,
       hasSubscription: false,
@@ -204,7 +207,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.error("Error handling session details:", error);
     }
 
+    return sessionDetails;
+  }
+
+  const getSessionDetails = async () => {
+    const sessionDetails = await getSessionFromDatabase();
+    console.log("Session details:", sessionDetails);
     sendResponse(sessionDetails); // Send the response after all async operations
+    return sessionDetails;
   };
 
   const handleSignIn = async () => {
