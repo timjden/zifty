@@ -165,6 +165,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadingDotsHTML =
     '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
 
+  // Disable all toggle switches initially
+  const toggleSwitches = document.querySelectorAll("input[type=checkbox]");
+  toggleSwitches.forEach((toggle) => {
+    toggle.disabled = true;
+  });
+
   // Check if the browser is Chrome
   chrome.runtime.sendMessage({ message: "checkBrowser" }, function (response) {
     if (!response.isChrome) {
@@ -185,6 +191,11 @@ document.addEventListener("DOMContentLoaded", () => {
         handleResume,
         handleCancel
       );
+
+      // Enable all toggle switches after UI update
+      toggleSwitches.forEach((toggle) => {
+        toggle.disabled = false;
+      });
     });
 
     function handleSignIn() {
@@ -203,6 +214,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 handleResume,
                 handleCancel
               );
+
+              // Enable all toggle switches after UI update
+              toggleSwitches.forEach((toggle) => {
+                toggle.disabled = false;
+              });
             }
           );
         }
@@ -225,6 +241,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 handleResume,
                 handleCancel
               );
+
+              // Enable all toggle switches after UI update
+              toggleSwitches.forEach((toggle) => {
+                toggle.disabled = false;
+              });
             }
           );
         }
@@ -271,6 +292,11 @@ document.addEventListener("DOMContentLoaded", () => {
                   handleResume,
                   handleCancel
                 );
+
+                // Enable all toggle switches after UI update
+                toggleSwitches.forEach((toggle) => {
+                  toggle.disabled = false;
+                });
               }
             );
           }
@@ -296,6 +322,11 @@ document.addEventListener("DOMContentLoaded", () => {
                   handleResume,
                   handleCancel
                 );
+
+                // Enable all toggle switches after UI update
+                toggleSwitches.forEach((toggle) => {
+                  toggle.disabled = false;
+                });
               }
             );
           }
