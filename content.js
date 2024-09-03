@@ -1,6 +1,7 @@
 // This content script will only run on pages with URLs as defined in the manifest.json
 //console.log("Zifty has injected a content script into this page.");
 
+let sessionDetails = null;
 let isSubscribed = null;
 let isSupportedBrowser = null;
 
@@ -18,8 +19,11 @@ async function waitForNotNull(variableAccessor, interval = 1000) {
 
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "isSubscribed") {
-    //console.log("Received subscription status from background");
-    //console.log("isSubscribed:", request.isSubscribed);
+    // console.log("Received subscription status from background");
+    // console.log("isSubscribed:", request.isSubscribed);
+    // console.log("Received sessionDetails from background");
+    // console.log("sessionDetails:", request.sessionDetails);
+    sessionDetails = request.sessionDetails;
     isSubscribed = request.isSubscribed;
   } else if (request.message === "isSupportedBrowser") {
     //console.log("Received supported browser status from background");
@@ -282,19 +286,39 @@ function isSupportedSite() {
   // If the user is subscribed, they get access to all free tier sites plus Google and Bing
   //console.log("isSubscribed:", isSubscribed);
   const isFreeTierSite =
-    (/^www\.amazon\./.test(url.hostname) && url.pathname === "/s") ||
-    (/^www\.walmart\./.test(url.hostname) && url.pathname === "/search/") ||
-    (/^www\.walmart\./.test(url.hostname) && url.pathname === "/search") ||
-    (/^www\.takealot\./.test(url.hostname) && url.pathname === "/all") ||
-    (/^www\.bol\./.test(url.hostname) && url.pathname === "/nl/nl/s/") ||
-    (/^www\.bol\./.test(url.hostname) && url.pathname === "/nl/fr/s/") ||
-    (/^www\.bol\./.test(url.hostname) && url.pathname === "/be/nl/s/") ||
-    (/^www\.bol\./.test(url.hostname) && url.pathname === "/be/fr/s/") ||
+    (/^www\.amazon\./.test(url.hostname) &&
+      url.pathname === "/s" &&
+      sessionDetails.toggleStatuses.amazon) ||
+    (/^www\.walmart\./.test(url.hostname) &&
+      url.pathname === "/search/" &&
+      sessionDetails.toggleStatuses.walmart) ||
+    (/^www\.walmart\./.test(url.hostname) &&
+      url.pathname === "/search" &&
+      sessionDetails.toggleStatuses.walmart) ||
+    (/^www\.takealot\./.test(url.hostname) &&
+      url.pathname === "/all" &&
+      sessionDetails.toggleStatuses.takealot) ||
+    (/^www\.bol\./.test(url.hostname) &&
+      url.pathname === "/nl/nl/s/" &&
+      sessionDetails.toggleStatuses.bol) ||
+    (/^www\.bol\./.test(url.hostname) &&
+      url.pathname === "/nl/fr/s/" &&
+      sessionDetails.toggleStatuses.bol) ||
+    (/^www\.bol\./.test(url.hostname) &&
+      url.pathname === "/be/nl/s/" &&
+      sessionDetails.toggleStatuses.bol) ||
+    (/^www\.bol\./.test(url.hostname) &&
+      url.pathname === "/be/fr/s/" &&
+      sessionDetails.toggleStatuses.bol) ||
     (/^www\.temu\./.test(url.hostname) &&
-      url.pathname === "/search_result.html") ||
+      url.pathname === "/search_result.html" &&
+      sessionDetails.toggleStatuses.temu) ||
     (/^www\.aliexpress\./.test(url.hostname) &&
-      /\/wholesale-/.test(url.pathname));
-  const isPaidTierSite = isGoogleSearchBuyPage || isBingSearchBuyPage;
+      /\/wholesale-/.test(url.pathname) &&
+      sessionDetails.toggleStatuses.aliexpress);
+  const isPaidTierSite =
+    (isGoogleSearchBuyPage && sessionDetails.toggleStatuses.google) ||
+    (isBingSearchBuyPage && sessionDetails.toggleStatuses.bing);
   let result;
   if (isSubscribed) {
     // Return true if the user is on Amazon\Walmart etc. search results or a Google\Bing etc. search page with product listings
