@@ -1,9 +1,9 @@
 #button-container {
-  width: 100%;
-  min-height: 200px;
+  /* width: 400px; */
+  /* min-height: 200px; */
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Ensures the buttons are spaced out within the container */
+  /* justify-content: space-between; Ensures the buttons are spaced out within the container */
   align-items: stretch; /* Makes the buttons fill the container's width */
   text-align: center;
 }
@@ -11,10 +11,13 @@
 #auth-button,
 #subscription-button {
   font-size: medium;
-  height: 50px; /* Each button will take up nearly half the container's height */
-  width: 100%; /* Makes the buttons fill the container's width */
-  box-sizing: border-box; /* Ensures padding/border are included in the width/height */
+  min-height: 40px; /* Each button will take up nearly half the container's height */
+  width: 90%; /* Makes the buttons fill the container's width */
+  /* box-sizing: border-box; Ensures padding/border are included in the width/height */
   cursor: pointer; /* Changes cursor to pointer on hover */
+  /* border: 1px solid red; */
+  border-radius: 5px;
+  margin: 0 auto; /* Centers the buttons */
 }
 
 #authButton {
@@ -25,9 +28,11 @@
 
 #subscription-message {
   font-size: large;
-  height: 65px; /* Each button will take up nearly half the container's height */
+  height: 45px;
+  /* height: 65px; Each button will take up nearly half the container's height */
   width: 100%; /* Makes the buttons fill the container's width */
-  box-sizing: border-box; /* Ensures padding/border are included in the width/height */
+  /* box-sizing: border-box; Ensures padding/border are included in the width/height */
+  /* border: 1px solid green; */
 }
 
 #subscription-container {
@@ -42,8 +47,8 @@
 body {
   font-family: Arial, sans-serif;
   width: 450px;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 1px;
+  padding-right: 1px;
 }
 .content {
   margin-top: 2px;
@@ -159,6 +164,7 @@ img {
   background-color: #ccc;
   transition: 0.4s;
   border-radius: 34px;
+  border: 1px solid black;
 }
 
 .slider:before {
@@ -179,4 +185,28 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(14px);
+}
+
+#button-container {
+  border: 2px solid black;
+  border-radius: 10px;
+  padding: 5px;
+  margin-top: 5px;
+  height: 165px;
+  box-shadow: gray 1px 1px 1px;
+}
+
+#toggle-box,
+#premium-box {
+  border: 2px solid black;
+  border-radius: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding-left: 10px;
+  padding-right: 5px;
+  box-shadow: gray 1px 1px 1px;
+}
+
+#toggle-box {
+  height: 250px;
 }

@@ -3,6 +3,7 @@ const subscriptionContainer = document.getElementById("subscription-container");
 const subscriptionMessage = document.getElementById("subscription-message");
 const subscriptionButton = document.getElementById("subscription-button");
 const signUpMessage = document.getElementById("signup-message");
+const buttonContainer = document.getElementById("button-container");
 
 function handleToggleChange(event) {
   const isChecked = event.target.checked;
@@ -109,7 +110,10 @@ function updateUI(
     authButton.addEventListener("click", handleLogout);
 
     subscriptionContainer.style.display = "inline-block";
-    signUpMessage.textContent = "";
+    // Delete signup message element from the DOM
+    if (signUpMessage) {
+      signUpMessage.remove();
+    }
 
     displayToggles(true);
     updateToggleStates(response.toggleStatuses);
@@ -124,7 +128,7 @@ function updateUI(
       if (response.isSubscriptionCancelled) {
         subscriptionButton.textContent = "Resume Subscription";
         subscriptionMessage.innerHTML =
-          "Your subscription has been cancelled and will expire soon.";
+          "Your subscription has been cancelled and will expire {TODO: Get date.}.";
         subscriptionButton.removeEventListener("click", handleSubscribe);
         subscriptionButton.removeEventListener("click", handleCancel);
         subscriptionButton.addEventListener("click", handleResume);
@@ -138,8 +142,9 @@ function updateUI(
       }
     } else {
       subscriptionButton.textContent = "💳 Subscribe";
-      subscriptionMessage.textContent =
-        "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
+      subscriptionMessage.textContent = "";
+      // subscriptionMessage.textContent =
+      //   "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
       subscriptionButton.removeEventListener("click", handleResume);
       subscriptionButton.addEventListener("click", handleSubscribe);
@@ -156,8 +161,17 @@ function updateUI(
     authButton.removeEventListener("click", handleLogout);
     authButton.addEventListener("click", handleSignIn);
 
-    signUpMessage.textContent =
-      "Sign in and subscribe to access premium features!";
+    // Add signup message to the DOM
+    if (!document.getElementById("signup-message")) {
+      const signUpMessage = document.createElement("p");
+      signUpMessage.id = "signup-message";
+      signUpMessage.textContent =
+        "Sign in and subscribe to access premium features!";
+      buttonContainer.appendChild(signUpMessage);
+    }
+
+    // signUpMessage.textContent =
+    //   "Sign in and subscribe to access premium features!";
     subscriptionContainer.style.display = "none";
 
     // Hide toggle switches if user is not signed in ...
