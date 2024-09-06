@@ -139,8 +139,9 @@ function updateUI(
         subscriptionButton.addEventListener("click", handleResume);
       } else {
         subscriptionButton.textContent = "Cancel Subscription 😔";
-        subscriptionMessage.innerHTML =
-          'Thanks for being a Zifty subscriber! 🎉 <br> Try with Google <a href="https://www.google.com/search?q=buy%20electric%20scooter%20near%20me" target="_blank">now</a>.';
+        subscriptionMessage.innerHTML = `You're subscribed! 🎉 Your subscription will automatically renew on ${formatDate(
+          response.renewsAt
+        )}.`;
         subscriptionButton.removeEventListener("click", handleSubscribe);
         subscriptionButton.removeEventListener("click", handleResume);
         subscriptionButton.addEventListener("click", handleCancel);
@@ -334,7 +335,7 @@ function formatDate(isoString) {
   const date = new Date(isoString);
   return date.toLocaleString("en-US", {
     year: "numeric",
-    month: "long", // Full month name
+    month: "short", // Full month name
     day: "numeric",
     hour: "numeric",
     minute: "numeric",
