@@ -127,6 +127,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       hasSubscription: false,
       isSubscriptionActive: false,
       isSubscriptionCancelled: false,
+      expiresAt: null,
       toggleStatuses: {
         amazon: true,
         walmart: true,
@@ -177,6 +178,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             console.log("User data:", userData);
+            sessionDetails.expiresAt = userData.expiresAt || null;
             sessionDetails.toggleStatuses.amazon = userData.amazon || false;
             sessionDetails.toggleStatuses.walmart = userData.walmart || false;
             sessionDetails.toggleStatuses.takealot = userData.takealot || false;

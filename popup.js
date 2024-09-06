@@ -2,7 +2,6 @@ const authButton = document.getElementById("auth-button");
 const subscriptionContainer = document.getElementById("subscription-container");
 const subscriptionMessage = document.getElementById("subscription-message");
 const subscriptionButton = document.getElementById("subscription-button");
-const signUpMessage = document.getElementById("signup-message");
 const buttonContainer = document.getElementById("button-container");
 
 function handleToggleChange(event) {
@@ -54,6 +53,7 @@ function updateUI(
   handleResume,
   handleCancel
 ) {
+  console.log(response);
   // Disable all toggle switches until UI is updated
   const toggleSwitches = document.querySelectorAll("input[type=checkbox]");
   toggleSwitches.forEach((toggle) => {
@@ -111,7 +111,11 @@ function updateUI(
 
     subscriptionContainer.style.display = "inline-block";
     // Delete signup message element from the DOM
-    if (signUpMessage) {
+    const signUpMessage = document.getElementById("signup-message");
+    console.log("Removing signup-message");
+    console.log(signUpMessage);
+    if (signUpMessage !== null) {
+      console.log("Remove signup-message");
       signUpMessage.remove();
     }
 
@@ -127,8 +131,9 @@ function updateUI(
 
       if (response.isSubscriptionCancelled) {
         subscriptionButton.textContent = "Resume Subscription";
-        subscriptionMessage.innerHTML =
-          "Your subscription has been cancelled and will expire {TODO: Get date.}.";
+        subscriptionMessage.innerHTML = `Your subscription has been cancelled and will expire on ${formatDate(
+          response.expiresAt
+        )}.`;
         subscriptionButton.removeEventListener("click", handleSubscribe);
         subscriptionButton.removeEventListener("click", handleCancel);
         subscriptionButton.addEventListener("click", handleResume);
@@ -142,7 +147,7 @@ function updateUI(
       }
     } else {
       subscriptionButton.textContent = "💳 Subscribe";
-      subscriptionMessage.textContent = "";
+      subscriptionMessage.textContent = "You are not subscribed to Zifty. 😢";
       // subscriptionMessage.textContent =
       //   "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
@@ -324,3 +329,15 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   });
 });
+
+function formatDate(isoString) {
+  const date = new Date(isoString);
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "long", // Full month name
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true, // Display in 12-hour format
+  });
+}
