@@ -1,7 +1,7 @@
 Feature: Zifty overlay
 
   Scenario: User navigates to an unsupported site
-    Given I have navigate to example.com
+    Given I have navigated to example.com
     Then Zifty overlay is not displayed
 
   Scenario: User searches for a product on Amazon
