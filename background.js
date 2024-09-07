@@ -239,22 +239,107 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   };
 
   const handleSignIn = async () => {
-    try {
-      chrome.identity.clearAllCachedAuthTokens(function () {});
+    let retryCount = 0;
+    const maxRetries = 3;
 
-      const token = await new Promise((resolve, reject) => {
-        chrome.identity.getAuthToken({ interactive: true }, (token) => {
-          if (chrome.runtime.lastError || !token) {
-            //console.log("Error getting token:", chrome.runtime.lastError);
-            reject(
-              "User cancelled the sign-in process or closed the login window."
+    const tryGetAuthToken = async () => {
+      try {
+        // Clear cached tokens to ensure fresh sign-in
+        chrome.identity.clearAllCachedAuthTokens(function () {});
+
+        // Check if the user is signed into Chrome
+        chrome.identity.getProfileUserInfo(async (userInfo) => {
+          if (!userInfo.email) {
+            console.log(
+              "User is not signed into Chrome, triggering Chrome sign-in."
+            );
+            // Trigger Chrome sign-in first if the user is not signed into Chrome
+            chrome.identity.getAuthToken(
+              { interactive: true },
+              async (token) => {
+                if (chrome.runtime.lastError || !token) {
+                  console.error(
+                    "Chrome sign-in error:",
+                    chrome.runtime.lastError
+                  );
+                  console.error(
+                    "Chrome sign-in error (detailed):",
+                    JSON.stringify(chrome.runtime.lastError, null, 2)
+                  );
+
+                  if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(
+                      `Retrying Chrome sign-in... attempt ${retryCount}`
+                    );
+                    await tryGetAuthToken(); // Retry the sign-in process
+                  } else {
+                    sendResponse({
+                      success: false,
+                      error: "Failed to sign in to Chrome after retries",
+                    });
+                  }
+                } else {
+                  console.log(
+                    "Chrome sign-in successful, initiating OAuth flow."
+                  );
+                  await signInToZifty(token); // Proceed to sign into Zifty after successful Chrome sign-in
+                }
+              }
             );
           } else {
-            resolve(token);
+            console.log("User is already signed into Chrome.");
+            // If the user is already signed into Chrome, get the OAuth token directly
+            chrome.identity.getAuthToken(
+              { interactive: true },
+              async (token) => {
+                if (chrome.runtime.lastError || !token) {
+                  console.error(
+                    "Error getting OAuth token:",
+                    chrome.runtime.lastError
+                  );
+                  console.error(
+                    "Error getting OAuth token (detailed):",
+                    JSON.stringify(chrome.runtime.lastError, null, 2)
+                  );
+
+                  if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(
+                      `Retrying getting OAuth token... attempt ${retryCount}`
+                    );
+                    await tryGetAuthToken(); // Retry the OAuth token request
+                  } else {
+                    sendResponse({
+                      success: false,
+                      error: "Failed to get Google OAuth token after retries",
+                    });
+                  }
+                } else {
+                  await signInToZifty(token); // Proceed to sign into Zifty after getting the OAuth token
+                }
+              }
+            );
           }
         });
-      });
+      } catch (error) {
+        console.error("Sign-in failed:", error);
+        console.error(
+          "Sign-in failed (detailed):",
+          JSON.stringify(error, null, 2)
+        );
+        sendResponse({ success: false, error: error.message || error });
+      }
+    };
 
+    // Start the sign-in process
+    await tryGetAuthToken();
+  };
+
+  // Helper function to sign in to Zifty with Google OAuth
+  async function signInToZifty(token) {
+    console.log("Signing in to Zifty with Google OAuth...");
+    try {
       const credential = GoogleAuthProvider.credential(null, token);
       const result = await signInWithCredential(auth, credential);
       const user = result.user;
@@ -265,7 +350,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (!userDoc.exists()) {
         await setDoc(userDocRef, {
           uid: user.uid,
-          // email: user.email, // Not needed for now
           paidAt: null,
           cancelledAt: null,
           subscriptionId: null,
@@ -280,7 +364,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           google: false,
           bing: false,
         });
-        //console.log("User added to Firestore:", user.uid);
       }
 
       sendResponse({ success: true });
@@ -288,7 +371,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.error("Firebase Google Sign-In failed:", error);
       sendResponse({ success: false, error: error.message || error });
     }
-  };
+  }
 
   const handleSignOut = async () => {
     signOut(auth)
