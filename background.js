@@ -157,7 +157,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
 
       if (user) {
-        console.log("User:", user);
+        //console.log("User:", user);
         // Refresh token logic
         await user.getIdToken(true); // Force refresh the token to ensure it is up-to-date
 
@@ -178,7 +178,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log("User data:", userData);
+            //console.log("User data:", userData);
             sessionDetails.expiresAt = userData.expiresAt || null;
             sessionDetails.renewsAt = userData.renewsAt || null;
             sessionDetails.toggleStatuses.amazon = userData.amazon || false;
@@ -193,21 +193,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           } else {
             //console.log("User document does not exist.");
           }
-
-          //console.log(
-          //   isCancelled
-          //     ? "User has cancelled their subscription but still has access."
-          //     : "User has a subscription and has not cancelled."
-          // );
         } else {
-          console.log("User is not subscribed.");
+          //console.log("User is not subscribed.");
           // Fetch the toggle statuses from individual fields in the user's document
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log("User data:", userData);
+            //console.log("User data:", userData);
             sessionDetails.toggleStatuses.amazon = userData.amazon || false;
             sessionDetails.toggleStatuses.walmart = userData.walmart || false;
             sessionDetails.toggleStatuses.takealot = userData.takealot || false;
@@ -218,11 +212,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sessionDetails.toggleStatuses.google = userData.google || false;
             sessionDetails.toggleStatuses.bing = userData.bing || false;
           } else {
-            console.log("User document does not exist.");
+            //console.log("User document does not exist.");
           }
         }
       } else {
-        console.log("User is not signed in.");
+        //console.log("User is not signed in.");
       }
     } catch (error) {
       console.error("Error handling session details:", error);
@@ -250,9 +244,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Check if the user is signed into Chrome
         chrome.identity.getProfileUserInfo(async (userInfo) => {
           if (!userInfo.email) {
-            console.log(
-              "User is not signed into Chrome, triggering Chrome sign-in."
-            );
             // Trigger Chrome sign-in first if the user is not signed into Chrome
             chrome.identity.getAuthToken(
               { interactive: true },
@@ -269,9 +260,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                   if (retryCount < maxRetries) {
                     retryCount++;
-                    console.log(
-                      `Retrying Chrome sign-in... attempt ${retryCount}`
-                    );
                     await tryGetAuthToken(); // Retry the sign-in process
                   } else {
                     sendResponse({
@@ -280,15 +268,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     });
                   }
                 } else {
-                  console.log(
-                    "Chrome sign-in successful, initiating OAuth flow."
-                  );
                   await signInToZifty(token); // Proceed to sign into Zifty after successful Chrome sign-in
                 }
               }
             );
           } else {
-            console.log("User is already signed into Chrome.");
+            //console.log("User is already signed into Chrome.");
             // If the user is already signed into Chrome, get the OAuth token directly
             chrome.identity.getAuthToken(
               { interactive: true },
@@ -305,9 +290,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                   if (retryCount < maxRetries) {
                     retryCount++;
-                    console.log(
-                      `Retrying getting OAuth token... attempt ${retryCount}`
-                    );
                     await tryGetAuthToken(); // Retry the OAuth token request
                   } else {
                     sendResponse({
@@ -338,7 +320,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Helper function to sign in to Zifty with Google OAuth
   async function signInToZifty(token) {
-    console.log("Signing in to Zifty with Google OAuth...");
+    //console.log("Signing in to Zifty with Google OAuth...");
     try {
       const credential = GoogleAuthProvider.credential(null, token);
       const result = await signInWithCredential(auth, credential);

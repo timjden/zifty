@@ -53,7 +53,7 @@ function updateUI(
   handleResume,
   handleCancel
 ) {
-  console.log(response);
+  //console.log(response);
   // Disable all toggle switches until UI is updated
   const toggleSwitches = document.querySelectorAll("input[type=checkbox]");
   toggleSwitches.forEach((toggle) => {
@@ -78,7 +78,7 @@ function updateUI(
 
   // Function to update the toggle states
   function updateToggleStates(toggleStatuses) {
-    console.log("Updating toggle states with:", toggleStatuses);
+    //console.log("Updating toggle states with:", toggleStatuses);
     // Map of toggle IDs to their corresponding statuses in the response
     const toggleMap = {
       amazon: toggleStatuses.amazon ?? true,
@@ -104,7 +104,7 @@ function updateUI(
   }
 
   if (response.isUserSignedIn) {
-    console.log("User is signed in. Updating UI...");
+    //console.log("User is signed in. Updating UI...");
     authButton.textContent = "Logout";
     authButton.removeEventListener("click", handleSignIn);
     authButton.addEventListener("click", handleLogout);
@@ -112,10 +112,10 @@ function updateUI(
     subscriptionContainer.style.display = "inline-block";
     // Delete signup message element from the DOM
     const signUpMessage = document.getElementById("signup-message");
-    console.log("Removing signup-message");
-    console.log(signUpMessage);
+    //console.log("Removing signup-message");
+    //console.log(signUpMessage);
     if (signUpMessage !== null) {
-      console.log("Remove signup-message");
+      //console.log("Remove signup-message");
       signUpMessage.remove();
     }
 
