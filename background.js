@@ -8,7 +8,7 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   signOut,
-} from "firebase/auth";
+} from "firebase/auth/web-extension";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 
