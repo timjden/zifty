@@ -138,8 +138,9 @@ function updateUI(
         subscriptionButton.removeEventListener("click", handleCancel);
         subscriptionButton.addEventListener("click", handleResume);
       } else {
-        subscriptionButton.textContent = "Cancel Subscription 😔";
-        subscriptionMessage.innerHTML = `You're subscribed! 🎉 Your subscription will automatically renew on ${formatDate(
+        subscriptionButton.innerHTML =
+          'Cancel Subscription <span class="emoji">😔</span>';
+        subscriptionMessage.innerHTML = `You're subscribed! <span class="emoji">🎉</span> Your subscription will automatically renew on ${formatDate(
           response.renewsAt
         )}.`;
         subscriptionButton.removeEventListener("click", handleSubscribe);
@@ -147,8 +148,9 @@ function updateUI(
         subscriptionButton.addEventListener("click", handleCancel);
       }
     } else {
-      subscriptionButton.textContent = "💳 Subscribe";
-      subscriptionMessage.textContent = "You are not subscribed to Zifty. 😢";
+      subscriptionButton.innerHTML = '<span class="emoji">💳</span> Subscribe';
+      subscriptionMessage.innerHTML =
+        'You are not subscribed to Zifty. <span class="emoji">😢</span>';
       // subscriptionMessage.textContent =
       //   "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
@@ -202,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!response.isChrome) {
       // Display a message and stop further execution if the browser is not supported
       document.body.innerHTML =
-        '<p style="font-size: large;">🚫 This browser is not supported. Currently, Zifty only works with Google Chrome.</p>';
+        '<p style="font-size: large;"><span class="emoji">🚫</span> This browser is not supported. Currently, Zifty only works with Google Chrome.</p>';
       return;
     }
 

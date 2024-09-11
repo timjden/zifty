@@ -55,6 +55,7 @@ body {
 }
 p {
   font-size: large;
+  margin: 8px;
 }
 #indent {
   font-size: large;
@@ -190,7 +191,7 @@ input:checked + .slider:before {
 #button-container {
   border: 2px solid black;
   border-radius: 10px;
-  padding: 5px;
+  padding: 8px;
   margin-top: 5px;
   height: 165px;
   box-shadow: gray 1px 1px 1px;
@@ -209,4 +210,31 @@ input:checked + .slider:before {
 
 #toggle-box {
   height: 250px;
+}
+
+@font-face {
+  font-family: "NotoColorEmoji";
+  src: url("./assets/NotoColorEmoji-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/Roboto-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/Roboto-Bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+body {
+  font-family: "Roboto";
+}
+
+.emoji {
+  font-family: "NotoColorEmoji";
 }
