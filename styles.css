@@ -1,3 +1,17 @@
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/Roboto-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/Roboto-Bold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+}
+
 #zifty-overlay {
   position: fixed;
   bottom: 1%;
@@ -151,7 +165,7 @@
 }
 
 .listing-location {
-  font-size: 13px;
+  font-size: 14px;
   height: 30%;
   margin-top: -3px;
 }
@@ -159,14 +173,14 @@
 .listing-title {
   height: 30%;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .listing-price {
   height: 40%;
   font-weight: bold;
-  font-size: 16px;
-  margin-top: -3px;
+  font-size: 18px;
+  margin-top: -4px;
 }
 
 #no-listings {
@@ -243,22 +257,4 @@
   100% {
     transform: rotate(360deg);
   }
-}
-
-@font-face {
-  font-family: "Roboto";
-  src: url("./assets/Roboto-Regular.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "Roboto";
-  src: url("./assets/Roboto-Bold.ttf") format("truetype");
-  font-weight: bold;
-  font-style: normal;
-}
-
-body {
-  font-family: "Roboto";
 }
