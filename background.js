@@ -490,6 +490,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     );
     if (!isChrome) {
       sendResponse({ isChrome: false });
+      return false;
     }
     if (sender.tab) {
       chrome.tabs.sendMessage(sender.tab.id, {
@@ -498,6 +499,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     }
     sendResponse({ isChrome: true });
+    return true;
   };
 
   const handleToggleChange = async (toggleId, isChecked) => {
