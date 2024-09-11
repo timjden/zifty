@@ -247,8 +247,10 @@ function extractAliExpressSearchQuery(url) {
 function isSupportedSite() {
   if (!isSupportedBrowser) {
     //console.log("This browser is not supported.");
+    isSupportedBrowser = null;
     return false;
   }
+  isSupportedBrowser = null;
   // Check if this is a Google search page with product listings
   const googleBuyPanelXpath =
     "//div[contains(concat(' ', normalize-space(@class), ' '), ' cu-container ')]";
