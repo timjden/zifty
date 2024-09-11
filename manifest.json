@@ -42,7 +42,10 @@
         "popup_styles.css",
         "offscreen.html",
         "offscreen.js",
-        "assets/google.svg"
+        "assets/google.svg",
+        "assets/Roboto-Bold.tff",
+        "assets/Roboto-Regular.tff",
+        "assets/NotoColorEmoji-Regular.ttf"
       ],
       "matches": ["<all_urls>"]
     }
