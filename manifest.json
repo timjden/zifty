@@ -43,8 +43,8 @@
         "offscreen.html",
         "offscreen.js",
         "assets/google.svg",
-        "assets/Roboto-Bold.tff",
-        "assets/Roboto-Regular.tff",
+        "assets/Roboto-Bold.ttf",
+        "assets/Roboto-Regular.ttf",
         "assets/NotoColorEmoji-Regular.ttf"
       ],
       "matches": ["<all_urls>"]
