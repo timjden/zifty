@@ -1,46 +1,37 @@
 #button-container {
-  /* width: 400px; */
-  /* min-height: 200px; */
   display: flex;
   flex-direction: column;
-  /* justify-content: space-between; Ensures the buttons are spaced out within the container */
-  align-items: stretch; /* Makes the buttons fill the container's width */
+  align-items: stretch;
   text-align: center;
 }
 
 #auth-button,
 #subscription-button {
   font-size: medium;
-  min-height: 40px; /* Each button will take up nearly half the container's height */
-  width: 90%; /* Makes the buttons fill the container's width */
-  /* box-sizing: border-box; Ensures padding/border are included in the width/height */
-  cursor: pointer; /* Changes cursor to pointer on hover */
-  /* border: 1px solid red; */
+  min-height: 40px;
+  width: 90%;
+  cursor: pointer;
   border-radius: 5px;
-  margin: 0 auto; /* Centers the buttons */
+  margin: 0 auto;
 }
 
 #authButton {
   display: flex;
-  /* align-items: center; 
-  justify-content: center; */
 }
 
 #subscription-message {
   font-size: large;
   height: 45px;
-  /* height: 65px; Each button will take up nearly half the container's height */
-  width: 100%; /* Makes the buttons fill the container's width */
-  /* box-sizing: border-box; Ensures padding/border are included in the width/height */
-  /* border: 1px solid green; */
+  width: 90%;
+  margin: 0 auto;
+  border: 1px solid green;
 }
 
 #subscription-container {
   display: flex;
   height: 150px;
   flex-direction: column;
-  align-items: stretch; /* Makes the buttons fill the container's width */
-  /* gap: 10px; */
+  align-items: stretch;
   text-align: center;
 }
 
@@ -95,36 +86,32 @@ p {
 }
 
 img {
-  /* border: 1px solid green; */
   margin-right: 8px;
   width: auto;
   vertical-align: middle;
 }
 
 #auth-button-label {
-  /* border: 1px solid red; */
   position: relative;
-  top: 1px; /* Adjust this value to move the label down */
+  top: 1px;
 }
 
-/* Ensure columns are aligned */
 .columns {
   display: flex;
   justify-content: space-between;
 }
 
 .column {
-  width: 48%; /* Adjust the width to suit your design */
+  width: 48%;
 }
 
 .item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px; /* Space between items */
+  margin-bottom: 10px;
 }
 
-/* Toggle Switch Style */
 .left-switch {
   position: absolute;
   left: 160px;
