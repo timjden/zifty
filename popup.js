@@ -3,6 +3,7 @@ const subscriptionContainer = document.getElementById("subscription-container");
 const subscriptionMessage = document.getElementById("subscription-message");
 const subscriptionButton = document.getElementById("subscription-button");
 const buttonContainer = document.getElementById("button-container");
+// const subscriptionOptions = document.getElementById("subscription-options");
 
 function handleToggleChange(event) {
   const isChecked = event.target.checked;
@@ -109,7 +110,7 @@ function updateUI(
     authButton.removeEventListener("click", handleSignIn);
     authButton.addEventListener("click", handleLogout);
 
-    subscriptionContainer.style.display = "inline-block";
+    subscriptionContainer.style.display = "flex";
     // Delete signup message element from the DOM
     const signUpMessage = document.getElementById("signup-message");
     //console.log("Removing signup-message");
@@ -138,19 +139,23 @@ function updateUI(
         subscriptionButton.removeEventListener("click", handleCancel);
         subscriptionButton.addEventListener("click", handleResume);
       } else {
-        subscriptionButton.innerHTML =
-          'Cancel Subscription <span class="emoji">😔</span>';
-        subscriptionMessage.innerHTML = `You're subscribed! <span class="emoji">🎉</span> Your subscription will automatically renew on ${formatDate(
-          response.renewsAt
+        // subscriptionButton.innerHTML =
+        //   'Cancel Subscription <span class="emoji">😔</span>';
+        subscriptionButton.style.display = "none";
+        // subscriptionOptions.style.display = "none";
+        buttonContainer.style.height = "100px";
+
+        subscriptionMessage.innerHTML = `You're using Zifty premium! <span class="emoji">🎉</span> You have access to premium until ${formatDate(
+          response.expiresAt
         )}.`;
         subscriptionButton.removeEventListener("click", handleSubscribe);
         subscriptionButton.removeEventListener("click", handleResume);
         subscriptionButton.addEventListener("click", handleCancel);
       }
     } else {
-      subscriptionButton.innerHTML = '<span class="emoji">💳</span> Subscribe';
+      subscriptionButton.innerHTML = '<span class="emoji">💳</span> Buy';
       subscriptionMessage.innerHTML =
-        'You are not subscribed to Zifty. <span class="emoji">😢</span>';
+        'You are using Zifty basic. <span class="emoji">😢</span><br>Buy access to premium features below.';
       // subscriptionMessage.textContent =
       //   "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
       subscriptionButton.removeEventListener("click", handleCancel);
@@ -272,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
               chrome.tabs.create({
                 url:
-                  "https://zifty.lemonsqueezy.com/buy/fa2ee847-27be-4cab-88f8-09ff3b8d6890?checkout[custom][user_id]=" +
+                  "https://zifty.lemonsqueezy.com/buy/108ac084-c9a0-4c10-bd31-0a2f4552c7bf?checkout[custom][user_id]=" +
                   response.currentUser.uid,
               });
             } catch (error) {
