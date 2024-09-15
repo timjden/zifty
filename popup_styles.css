@@ -131,8 +131,8 @@ img {
 
 .premium-switch {
   position: absolute;
-  left: 160px;
-  display: inline-block;
+  left: 400px;
+  display: none;
   width: 34px;
   height: 20px;
 }
@@ -225,4 +225,20 @@ body {
 
 .emoji {
   font-family: "NotoColorEmoji";
+}
+
+#subscription-options {
+  display: flex;
+  gap: 5px; /* Space between radio buttons */
+  justify-content: center; /* Center align the buttons */
+  font-size: medium;
+  margin: 0 auto;
+  margin-bottom: 10px;
+}
+
+#subscription-options label {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* Space between the radio input and the label text */
+  font-size: medium;
 }
