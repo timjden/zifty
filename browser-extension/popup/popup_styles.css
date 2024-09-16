@@ -202,19 +202,19 @@ input:checked + .slider:before {
 
 @font-face {
   font-family: "NotoColorEmoji";
-  src: url("./assets/NotoColorEmoji-Regular.ttf") format("truetype");
+  src: url("../assets/NotoColorEmoji-Regular.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "Roboto";
-  src: url("./assets/Roboto-Regular.ttf") format("truetype");
+  src: url("../assets/Roboto-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
   font-family: "Roboto";
-  src: url("./assets/Roboto-Bold.ttf") format("truetype");
+  src: url("../assets/Roboto-Bold.ttf") format("truetype");
   font-weight: bold;
   font-style: normal;
 }

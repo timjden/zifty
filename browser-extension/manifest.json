@@ -1,0 +1,52 @@
+{
+  "name": "Zifty",
+  "version": "2.2.2",
+  "description": "Discover secondhand treasures while you shop!",
+  "author": "Zifty",
+  "manifest_version": 3,
+  "permissions": ["offscreen", "geolocation", "identity"],
+  "action": {
+    "default_popup": "./browser-extension/popup/popup.html",
+    "default_icon": {
+      "16": "browser-extension/assets/icon16.png",
+      "48": "browser-extension/assets/icon48.png",
+      "128": "browser-extension/assets/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "./browser-extension/background/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["./browser-extension/content/content.js"]
+    }
+  ],
+  "host_permissions": ["<all_urls>"],
+  "icons": {
+    "16": "browser-extension/assets/icon16.png",
+    "32": "browser-extension/assets/icon32.png",
+    "48": "browser-extension/assets/icon48.png",
+    "64": "browser-extension/assets/icon64.png",
+    "128": "browser-extension/assets/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "browser-extension/content/styles.css",
+        "browser-extension/popup/popup_styles.css",
+        "browser-extension/offscreen/offscreen.html",
+        "browser-extension/offscreen/offscreen.js",
+        "browser-extension/assets/google.svg",
+        "browser-extension/assets/Roboto-Bold.ttf",
+        "browser-extension/assets/Roboto-Regular.ttf",
+        "browser-extension/assets/NotoColorEmoji-Regular.ttf"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://us-central1-zifty-4e74a.cloudfunctions.net/completion https://www.facebook.com/api/graphql/"
+  }
+}

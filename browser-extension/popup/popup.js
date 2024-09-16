@@ -143,7 +143,7 @@ function updateUI(response, handleSignIn, handleLogout, handleSubscribe) {
     }
   } else {
     authButton.innerHTML =
-      '<img src="./assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>';
+      '<img src="../assets/google.svg" /> <span id="auth-button-label">Sign in with Google</span>';
     authButton.removeEventListener("click", handleLogout);
     authButton.addEventListener("click", handleSignIn);
 

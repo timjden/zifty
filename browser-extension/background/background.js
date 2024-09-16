@@ -7,140 +7,13 @@ import {
   signOut,
 } from "firebase/auth/web-extension";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
 import { logLocation } from "./geolocation.js";
 import firebaseConfig from "./firebaseConfig.js";
-
-const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
+import { firebaseAuth } from "./firebaseAuth.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const functions = getFunctions(app);
-
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    console.log("User is signed in:", user);
-  } else {
-    console.log("User is not signed in");
-    // try {
-    //   await signInWithCredentialFlow();
-    // } catch (error) {
-    //   console.error(
-    //     "Sign-in with credential failed, falling back to popup auth:",
-    //     error
-    //   );
-    //   await authenticateWithPopup();
-    // }
-  }
-});
-
-// This function simulates the token-based sign-in attempt
-async function signInWithCredentialFlow() {
-  // Attempt to retrieve stored credential/token from Firebase (automatically managed by Firebase)
-  const user = auth.currentUser;
-
-  if (user) {
-    // User is authenticated, no need for further action
-    console.log("Already authenticated with existing credentials.");
-  } else {
-    // Firebase will auto-manage the token refresh and sign-in states, no manual intervention needed.
-    throw new Error("No existing session. Token refresh failed.");
-  }
-}
-
-// Fallback to firebaseAuth (popup-based authentication)
-async function authenticateWithPopup() {
-  try {
-    // Call your firebaseAuth method to start the popup-based auth flow
-    const authResponse = await firebaseAuth(); // Implement firebaseAuth elsewhere
-    console.log("Token");
-    const idToken = authResponse._tokenResponse.oauthAccessToken;
-    console.log(idToken);
-    const credential = GoogleAuthProvider.credential(null, idToken);
-    console.log("Credential");
-    console.log(credential);
-    const result = await signInWithCredential(auth, credential);
-    const user = result.user;
-    console.log("Signed in successfully with popup.");
-    return user;
-  } catch (error) {
-    console.error("Popup authentication failed:", error);
-  }
-}
-
-let creating;
-
-async function hasDocument() {
-  const matchedClients = await clients.matchAll();
-  return matchedClients.some(
-    (c) => c.url === chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH)
-  );
-}
-
-async function setupOffscreenDocument(path) {
-  console.log("In setupOffscreenDocument");
-  if (!(await hasDocument())) {
-    console.log("Creating offscreen document...");
-    if (creating) {
-      console.log("Waiting for existing offscreen document to be created...");
-      await creating;
-    } else {
-      console.log("Creating new offscreen document...");
-      creating = chrome.offscreen.createDocument({
-        url: path,
-        reasons: [chrome.offscreen.Reason.DOM_SCRAPING],
-        justification: "authentication",
-      });
-      await creating;
-      creating = null;
-    }
-  }
-}
-
-async function closeOffscreenDocument() {
-  if (!(await hasDocument())) {
-    return;
-  }
-  await chrome.offscreen.closeDocument();
-}
-
-function getFirebaseAuth() {
-  return new Promise(async (resolve, reject) => {
-    const auth = await chrome.runtime.sendMessage({
-      type: "firebase-auth",
-      target: "offscreen",
-    });
-    auth?.name !== "FirebaseError" ? resolve(auth) : reject(auth);
-  });
-}
-
-async function firebaseAuth() {
-  console.log("Setting up offscreen document...");
-  await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
-  console.log("Offscreen document setup");
-
-  const auth = await getFirebaseAuth()
-    .then((auth) => {
-      console.log("User Authenticated", auth);
-      return auth;
-    })
-    .catch((err) => {
-      if (err.code === "auth/operation-not-allowed") {
-        console.error(
-          "You must enable an OAuth provider in the Firebase" +
-            " console in order to use signInWithPopup. This sample" +
-            " uses Google by default."
-        );
-      } else {
-        console.error(err);
-        return err;
-      }
-    })
-    .finally(closeOffscreenDocument);
-
-  return auth;
-}
 
 // Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
@@ -156,9 +29,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const handleSearchDetails = async () => {
     try {
-      //console.log("Received result:", request.data);
       const location = await logLocation(); // Get location before sending request to Facebook Marketplace
-      //console.log("Location:", location);
 
       if (request.data.page === "google" || request.data.page === "bing") {
         const headers = {
@@ -174,9 +45,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }
         );
         const data = await response.json();
-        //console.log("Data:", data);
         const completion = data.completion;
-        //console.log("Completion:", completion);
         request.data.query = completion.toLowerCase().trim();
       }
 
@@ -188,13 +57,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         },
         8 // radius
       );
-      //console.log("Number of listings:", fbListings.length);
       chrome.tabs.sendMessage(sender.tab.id, {
         message: "Listings",
         query: request.data.query,
         data: fbListings,
       });
-      sendResponse({ success: true }); // Send a response to indicate completion
+      sendResponse({ success: true });
     } catch (error) {
       console.error("Error during searchDetails processing:", error);
       sendResponse({ success: false, error: error.message });
@@ -203,13 +71,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   const handleIsUserSubscribed = async () => {
     try {
-      //console.log("Checking if user is subscribed...");
       const sessionDetails = await getSessionFromDatabase();
       const user = auth.currentUser;
       if (user) {
-        //console.log("User:", user);
         const response = await isUserSubscribed(user.uid);
-        //console.log("User is subscribed:", response);
         if (sender.tab) {
           chrome.tabs.sendMessage(sender.tab.id, {
             message: "isSubscribed",
@@ -218,7 +83,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           });
         }
       } else {
-        //console.log("User is not signed in.");
         if (sender.tab) {
           chrome.tabs.sendMessage(sender.tab.id, {
             message: "isSubscribed",
@@ -255,27 +119,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const user = auth.currentUser;
     try {
       if (user) {
-        console.log("User:", user);
-        // Refresh token logic
         await user.getIdToken(true); // Force refresh the token to ensure it is up-to-date
-
-        //console.log("User:", user);
         sessionDetails.isUserSignedIn = true;
-
-        console.log("Checking if user is subscribed");
         const isSubscribed = await isUserSubscribed(user.uid);
         sessionDetails.hasSubscription = isSubscribed;
-
         if (isSubscribed) {
           sessionDetails.isSubscriptionActive = true;
-
-          // Fetch the toggle statuses from individual fields in the user's document
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
-
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            //console.log("User data:", userData);
             sessionDetails.expiresAt = userData.expiresAt || null;
             sessionDetails.toggleStatuses.amazon = userData.amazon || false;
             sessionDetails.toggleStatuses.walmart = userData.walmart || false;
@@ -286,18 +139,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               userData.aliexpress || false;
             sessionDetails.toggleStatuses.google = userData.google || false;
             sessionDetails.toggleStatuses.bing = userData.bing || false;
-          } else {
-            //console.log("User document does not exist.");
           }
         } else {
-          //console.log("User is not subscribed.");
-          // Fetch the toggle statuses from individual fields in the user's document
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            //console.log("User data:", userData);
             sessionDetails.toggleStatuses.amazon = userData.amazon || false;
             sessionDetails.toggleStatuses.walmart = userData.walmart || false;
             sessionDetails.toggleStatuses.takealot = userData.takealot || false;
@@ -307,12 +155,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               userData.aliexpress || false;
             sessionDetails.toggleStatuses.google = userData.google || false;
             sessionDetails.toggleStatuses.bing = userData.bing || false;
-          } else {
-            //console.log("User document does not exist.");
           }
         }
       } else {
-        //console.log("User is not signed in.");
       }
     } catch (error) {
       console.error("Error handling session details:", error);
@@ -363,7 +208,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const handleSignOut = async () => {
     signOut(auth)
       .then(() => {
-        //console.log("User signed out successfully.");
         sendResponse({ success: true });
       })
       .catch((error) => {
@@ -380,46 +224,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   };
 
-  const checkBrowser = async () => {
-    const isChrome = navigator.userAgentData.brands.some(
-      (brand) => brand.brand === "Google Chrome"
-    );
-    if (!isChrome) {
-      sendResponse({ isChrome: false });
-      return false;
-    }
-    if (sender.tab) {
-      chrome.tabs.sendMessage(sender.tab.id, {
-        message: "isSupportedBrowser",
-        isSupportedBrowser: true,
-      });
-    }
-    sendResponse({ isChrome: true });
-    return true;
-  };
-
   const handleToggleChange = async (toggleId, isChecked) => {
     try {
       const user = auth.currentUser;
-
       if (!user) {
         throw new Error("User is not authenticated.");
       }
-
       const userDocRef = doc(db, "users", user.uid);
-
-      // Create an object to store the toggle status
       const updateData = {};
-      updateData[toggleId] = isChecked; // Dynamically set the field name and value
-
-      // Store the updated toggle status directly in the Firestore document
-      await setDoc(
-        userDocRef,
-        updateData,
-        { merge: true } // Merge with existing data in the document
-      );
-
-      //console.log(`Toggle status for ${toggleId} stored successfully.`);
+      updateData[toggleId] = isChecked;
+      await setDoc(userDocRef, updateData, { merge: true });
       return { success: true };
     } catch (error) {
       console.error(
@@ -442,8 +256,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleSignOut();
   } else if (request.message === "createSubscription") {
     handleCreateSubscription();
-  } else if (request.message === "checkBrowser") {
-    checkBrowser();
   } else if (request.message === "toggleChange") {
     const { toggleId, isChecked } = request;
     handleToggleChange(toggleId, isChecked);
@@ -452,36 +264,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Keep the message channel open for asynchronous response
 });
 
-// // const pollForUpdate = async (
-// //   docRef,
-// //   fieldName,
-// //   checkUpdateCondition,
-// //   interval = 1000,
-// //   maxAttempts = 10
-// // ) => {
-// //   let attempts = 0;
-
-// //   while (attempts < maxAttempts) {
-// //     const docSnapshot = await getDoc(docRef);
-// //     if (docSnapshot.exists()) {
-// //       const docData = docSnapshot.data();
-// //       const fieldValue = docData[fieldName];
-
-// //       if (checkUpdateCondition(fieldValue)) {
-// //         // If the field satisfies the condition, stop polling
-// //         return;
-// //       }
-// //     }
-
-// //     // Wait for the specified interval before checking again
-// //     await new Promise((resolve) => setTimeout(resolve, interval));
-
-// //     attempts++;
-// //   }
-
-// //   // If maxAttempts is reached and the condition is not met, throw an error
-// //   throw new Error(`Timeout: ${fieldName} was not updated in time.`);
-// // };
+async function authenticateWithPopup() {
+  try {
+    const authResponse = await firebaseAuth();
+    const accessToken = authResponse._tokenResponse.oauthAccessToken;
+    const credential = GoogleAuthProvider.credential(null, accessToken);
+    const result = await signInWithCredential(auth, credential);
+    const user = result.user;
+    return user;
+  } catch (error) {
+    console.error("Popup authentication failed:", error);
+  }
+}
 
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   let listings = [];
@@ -587,16 +381,12 @@ async function isUserSubscribed(uid) {
     if (userDoc.exists()) {
       const userData = userDoc.data();
       const expiresAt = userData.expiresAt;
-
-      // Handle ISO 8601 date string comparison
       if (expiresAt && new Date(expiresAt).getTime() > Date.now()) {
-        return true; // User is still subscribed
+        return true;
       }
-
-      return false; // Subscription has expired or doesn't exist
+      return false;
     }
-
-    return false; // User does not exist
+    return false;
   } catch (error) {
     console.error(
       "Failed to check subscription status:",
@@ -608,11 +398,9 @@ async function isUserSubscribed(uid) {
 
 function convertCurrencyCode(price) {
   let formattedPrice = price;
-
   if (price.includes("ZAR")) {
     formattedPrice = price.replace("ZAR", "R ");
   }
-
   return formattedPrice;
 }
 
