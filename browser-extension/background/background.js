@@ -184,8 +184,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         await setDoc(userDocRef, {
           uid: user.uid,
           paidAt: null,
-          subscriptionId: null,
-          status: null,
           customerId: null,
           amazon: true,
           walmart: true,
