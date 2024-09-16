@@ -46,14 +46,7 @@ document
   .addEventListener("change", handleToggleChange);
 document.getElementById("bing").addEventListener("change", handleToggleChange);
 
-function updateUI(
-  response,
-  handleSignIn,
-  handleLogout,
-  handleSubscribe,
-  handleResume,
-  handleCancel
-) {
+function updateUI(response, handleSignIn, handleLogout, handleSubscribe) {
   console.log("Updating UI");
   console.log(response);
   // Disable all toggle switches until UI is updated
@@ -137,8 +130,6 @@ function updateUI(
           response.expiresAt
         )}.`;
         subscriptionButton.removeEventListener("click", handleSubscribe);
-        subscriptionButton.removeEventListener("click", handleCancel);
-        subscriptionButton.addEventListener("click", handleResume);
       } else {
         // subscriptionButton.innerHTML =
         //   'Cancel Subscription <span class="emoji">😔</span>';
@@ -150,17 +141,13 @@ function updateUI(
           response.expiresAt
         )}.`;
         subscriptionButton.removeEventListener("click", handleSubscribe);
-        subscriptionButton.removeEventListener("click", handleResume);
-        subscriptionButton.addEventListener("click", handleCancel);
       }
     } else {
       subscriptionButton.innerHTML = '<span class="emoji">💳</span> Buy';
       subscriptionMessage.innerHTML =
         'You are using Zifty basic. <span class="emoji">😢</span><br>Buy access to premium features below.';
       // subscriptionMessage.textContent =
-      //   "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime.";
-      subscriptionButton.removeEventListener("click", handleCancel);
-      subscriptionButton.removeEventListener("click", handleResume);
+      //   "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime."
       subscriptionButton.addEventListener("click", handleSubscribe);
 
       // Hide toggles for premium features
@@ -221,14 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Proceed to get session details if the browser is supported
   chrome.runtime.sendMessage({ message: "getSessionDetails" }, (response) => {
-    updateUI(
-      response,
-      handleSignIn,
-      handleLogout,
-      handleSubscribe,
-      handleResume,
-      handleCancel
-    );
+    updateUI(response, handleSignIn, handleLogout, handleSubscribe);
   });
 
   function handleSignIn() {
@@ -239,14 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.runtime.sendMessage(
           { message: "getSessionDetails" },
           (response) => {
-            updateUI(
-              response,
-              handleSignIn,
-              handleLogout,
-              handleSubscribe,
-              handleResume,
-              handleCancel
-            );
+            updateUI(response, handleSignIn, handleLogout, handleSubscribe);
           }
         );
       }
@@ -260,14 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.runtime.sendMessage(
           { message: "getSessionDetails" },
           (response) => {
-            updateUI(
-              response,
-              handleSignIn,
-              handleLogout,
-              handleSubscribe,
-              handleResume,
-              handleCancel
-            );
+            updateUI(response, handleSignIn, handleLogout, handleSubscribe);
           }
         );
       }
@@ -290,54 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
           } catch (error) {
             console.error("Failed to subscribe:", error.message || error);
           }
-        }
-      }
-    );
-  };
-
-  const handleResume = () => {
-    subscriptionButton.innerHTML = loadingDotsHTML;
-    chrome.runtime.sendMessage(
-      { message: "resumeSubscription" },
-      (response) => {
-        if (response.success) {
-          chrome.runtime.sendMessage(
-            { message: "getSessionDetails" },
-            (response) => {
-              updateUI(
-                response,
-                handleSignIn,
-                handleLogout,
-                handleSubscribe,
-                handleResume,
-                handleCancel
-              );
-            }
-          );
-        }
-      }
-    );
-  };
-
-  const handleCancel = () => {
-    subscriptionButton.innerHTML = loadingDotsHTML;
-    chrome.runtime.sendMessage(
-      { message: "cancelSubscription" },
-      (response) => {
-        if (response.success) {
-          chrome.runtime.sendMessage(
-            { message: "getSessionDetails" },
-            (response) => {
-              updateUI(
-                response,
-                handleSignIn,
-                handleLogout,
-                handleSubscribe,
-                handleResume,
-                handleCancel
-              );
-            }
-          );
         }
       }
     );
