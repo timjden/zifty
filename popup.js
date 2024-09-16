@@ -123,31 +123,16 @@ function updateUI(response, handleSignIn, handleLogout, handleSubscribe) {
         "inline-block";
       document.getElementsByClassName("premium-switch")[1].style.display =
         "inline-block";
-
-      if (response.isSubscriptionCancelled) {
-        subscriptionButton.textContent = "Resume Subscription";
-        subscriptionMessage.innerHTML = `Your subscription has been cancelled and will expire on ${formatDate(
-          response.expiresAt
-        )}.`;
-        subscriptionButton.removeEventListener("click", handleSubscribe);
-      } else {
-        // subscriptionButton.innerHTML =
-        //   'Cancel Subscription <span class="emoji">😔</span>';
-        subscriptionButton.style.display = "none";
-        // subscriptionOptions.style.display = "none";
-        buttonContainer.style.height = "100px";
-
-        subscriptionMessage.innerHTML = `You're using Zifty premium! <span class="emoji">🎉</span> You have access to premium until ${formatDate(
-          response.expiresAt
-        )}.`;
-        subscriptionButton.removeEventListener("click", handleSubscribe);
-      }
+      subscriptionButton.style.display = "none";
+      buttonContainer.style.height = "100px";
+      subscriptionMessage.innerHTML = `You're using Zifty premium! <span class="emoji">🎉</span> You have access to premium until ${formatDate(
+        response.expiresAt
+      )}.`;
+      subscriptionButton.removeEventListener("click", handleSubscribe);
     } else {
       subscriptionButton.innerHTML = '<span class="emoji">💳</span> Buy';
       subscriptionMessage.innerHTML =
         'You are using Zifty basic. <span class="emoji">😢</span><br>Buy access to premium features below.';
-      // subscriptionMessage.textContent =
-      //   "Zifty is free to use with Amazon/Walmart etc. Subscribe for $1/week to use Zifty with Google/Bing. Cancel anytime."
       subscriptionButton.addEventListener("click", handleSubscribe);
 
       // Hide toggles for premium features

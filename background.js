@@ -240,7 +240,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       isUserSignedIn: false,
       hasSubscription: false,
       isSubscriptionActive: false,
-      isSubscriptionCancelled: false,
       expiresAt: null,
       toggleStatuses: {
         amazon: true,
@@ -269,7 +268,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         if (isSubscribed) {
           sessionDetails.isSubscriptionActive = true;
-          sessionDetails.isSubscriptionCancelled = false;
 
           // Fetch the toggle statuses from individual fields in the user's document
           const userDocRef = doc(db, "users", user.uid);
@@ -442,10 +440,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleSignIn();
   } else if (request.message === "signOut") {
     handleSignOut();
-  } else if (request.message === "resumeSubscription") {
-    handleResume();
-  } else if (request.message === "cancelSubscription") {
-    handleCancel();
   } else if (request.message === "createSubscription") {
     handleCreateSubscription();
   } else if (request.message === "checkBrowser") {

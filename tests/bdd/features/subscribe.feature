@@ -10,7 +10,6 @@ Feature: Subscribing to Zifty
     And I get an email confirming my subscription
     When I open the Zifty popup
     Then I see a message "You are subscribed to Zifty"
-    And I see a Cancel Subscription button
     And there are toggles for Google and Bing
 
   Scenario: Access premium features
