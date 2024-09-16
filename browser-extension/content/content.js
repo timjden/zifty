@@ -1,39 +1,4 @@
-// This content script will only run on pages with URLs as defined in the manifest.json
-//console.log("Zifty has injected a content script into this page.");
-
-let sessionDetails = null;
-let isSubscribed = null;
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForNotNull(variableAccessor, interval = 1000) {
-  while (variableAccessor() === null) {
-    //console.log("isSubscribed :", isSubscribed);
-    await sleep(interval); // sleep for the specified interval (default is 1 second)
-  }
-  //console.log("Got subscription status");
-}
-
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.message === "isSubscribed") {
-    //console.log("Received subscription status from background");
-    //console.log("isSubscribed:", request.isSubscribed);
-    //console.log("Received sessionDetails from background");
-    //console.log("sessionDetails:", request.sessionDetails);
-    sessionDetails = request.sessionDetails;
-    isSubscribed = request.isSubscribed;
-  }
-});
-
-// But the overlay might stay appended to the page so remove it if the user navigates away
-if (!isSupportedSite()) {
-  const overlay = document.getElementById("zifty-overlay");
-  if (overlay) {
-    document.body.removeChild(overlay);
-  }
-}
+console.log("Zifty has injected a content script into this page.");
 
 const ITEMS_PER_OVERLAY_PAGE = 6; // The number of listings to show per page in the Zifty overlay
 let currentIndex = 0; // Used to track pagination in the Zifty overlay
@@ -42,13 +7,26 @@ let currentSearchDetails = { page: null, query: null }; // Place to store the us
 let sendingSearchDetailsToBackground = false; // Flag to prevent multiple, concurrent requests for listings
 let ziftyOverlay; // Holds the Zifty overlay element
 
+let sessionDetails = null; // Holds the user's session details (e.g. toggle statuses)
+let isSubscribed = null; // Holds the user's subscription status
+
+// Delete the overlay if the user navigates away from a supported site
+if (!isSupportedSite()) {
+  const overlay = document.getElementById("zifty-overlay");
+  if (overlay) {
+    document.body.removeChild(overlay);
+  }
+}
+
 // When a page loads, send a message to the background script asking for the relevant listings
 window.addEventListener("load", async () => {
-  //console.log("Page loaded");
+  console.log("Page loaded");
   chrome.runtime.sendMessage({ message: "isUserSubscribed" });
   await waitForNotNull(() => isSubscribed);
   if (!isSupportedSite()) {
-    //console.log("This page is not supported by Zifty");
+    console.log(
+      "This page is not supported by Zifty, or has been disabled by the user"
+    );
     return;
   }
 
@@ -77,14 +55,30 @@ window.addEventListener("load", async () => {
   ziftyOverlay = createZiftyOverlay();
 });
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForNotNull(variableAccessor, interval = 1000) {
+  while (variableAccessor() === null) {
+    await sleep(interval); // sleep for the specified interval (default is 1 second)
+  }
+}
+
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.message === "isSubscribed") {
+    sessionDetails = request.sessionDetails;
+    isSubscribed = request.isSubscribed;
+  }
+});
+
 // ... OR when the URL changes (this info comes from background) send a message to the background script asking for the relevant listings
 chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === "URL changed") {
+    console.log("URL changed");
     chrome.runtime.sendMessage({ message: "isUserSubscribed" });
     await waitForNotNull(() => isSubscribed);
-    //console.log("URL changed");
     if (!isSupportedSite()) {
-      //console.log("This page is not supported by Zifty");
       try {
         const overlay = document.getElementById("zifty-overlay");
         if (overlay) {
@@ -268,49 +262,51 @@ function isSupportedSite() {
     /^www\.bing\./.test(url.hostname) &&
     url.pathname === "/search" &&
     bingBuyPanelExists;
-  //console.log("URL PATHNAME");
-  //console.log(url.pathname);
-  // If the user is subscribed, they get access to all free tier sites plus Google and Bing
-  //console.log("isSubscribed:", isSubscribed);
+
   const isFreeTierSite =
     (/^www\.amazon\./.test(url.hostname) &&
       url.pathname === "/s" &&
-      (sessionDetails.toggleStatuses.amazon ||
-        !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.amazon ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.walmart\./.test(url.hostname) &&
       url.pathname === "/search/" &&
-      (sessionDetails.toggleStatuses.walmart ||
-        !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.walmart ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.walmart\./.test(url.hostname) &&
       url.pathname === "/search" &&
-      (sessionDetails.toggleStatuses.walmart ||
-        !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.walmart ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.takealot\./.test(url.hostname) &&
       url.pathname === "/all" &&
-      (sessionDetails.toggleStatuses.takealot ||
-        !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.takealot ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/nl/nl/s/" &&
-      (sessionDetails.toggleStatuses.bol || !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.bol ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/nl/fr/s/" &&
-      (sessionDetails.toggleStatuses.bol || !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.bol ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/be/nl/s/" &&
-      (sessionDetails.toggleStatuses.bol || !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.bol ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/be/fr/s/" &&
-      (sessionDetails.toggleStatuses.bol || !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.bol ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.temu\./.test(url.hostname) &&
       url.pathname === "/search_result.html" &&
-      (sessionDetails.toggleStatuses.temu || !sessionDetails.isUserSignedIn)) ||
+      (sessionDetails?.toggleStatuses.temu ||
+        !sessionDetails?.isUserSignedIn)) ||
     (/^www\.aliexpress\./.test(url.hostname) &&
       /\/wholesale-/.test(url.pathname) &&
-      (sessionDetails.toggleStatuses.aliexpress ||
-        !sessionDetails.isUserSignedIn));
+      (sessionDetails?.toggleStatuses.aliexpress ||
+        !sessionDetails?.isUserSignedIn));
   const isPaidTierSite =
-    (isGoogleSearchBuyPage && sessionDetails.toggleStatuses.google) ||
-    (isBingSearchBuyPage && sessionDetails.toggleStatuses.bing);
+    (isGoogleSearchBuyPage && sessionDetails?.toggleStatuses.google) ||
+    (isBingSearchBuyPage && sessionDetails?.toggleStatuses.bing);
   let result;
   if (isSubscribed) {
     // Return true if the user is on Amazon\Walmart etc. search results or a Google\Bing etc. search page with product listings
@@ -369,7 +365,7 @@ function createOverlay() {
 
 function injectStylesheet() {
   const cssLink = document.createElement("link");
-  cssLink.href = chrome.runtime.getURL("styles.css");
+  cssLink.href = chrome.runtime.getURL("browser-extension/content/styles.css");
   cssLink.type = "text/css";
   cssLink.rel = "stylesheet";
   document.head.appendChild(cssLink);
