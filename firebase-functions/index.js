@@ -4,7 +4,7 @@ const axios = require("axios");
 const crypto = require("crypto"); // Import crypto for signature verification
 require("dotenv").config(); // Load environment variables from .env file
 
-const LEMON_SQUEEZY_API_KEY = process.env.LEMON_SQUEEZY_API_KEY;
+// const LEMON_SQUEEZY_API_KEY = process.env.LEMON_SQUEEZY_API_KEY;
 const LEMON_SQUEEZY_EVENT_SECRET = process.env.LEMON_SQUEEZY_EVENT_SECRET;
 
 admin.initializeApp();
@@ -29,7 +29,7 @@ exports.completion = functions.https.onRequest(async (req, res) => {
 
   const requestHeaders = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
+    "Authorization": `Bearer ${apiKey}`,
   };
 
   const data = {
@@ -57,7 +57,7 @@ exports.completion = functions.https.onRequest(async (req, res) => {
   };
 
   try {
-    const response = await axios.post(url, data, { headers: requestHeaders });
+    const response = await axios.post(url, data, {headers: requestHeaders});
     const completion = response.data;
     console.log("Completion:", completion.choices[0].message.content);
 
@@ -72,80 +72,25 @@ exports.completion = functions.https.onRequest(async (req, res) => {
   }
 });
 
-exports.handleSubscriptionCreated = functions.https.onRequest(
-  async (req, res) => {
-    try {
-      verifyLemonSqueezySignature(req);
+exports.handleOrderCreated = functions.https.onRequest(async (req, res) => {
+  try {
+    verifyLemonSqueezySignature(req);
 
-      console.log("Received subscription_created event");
-      const body = req.body;
-      const event = body.meta.event_name;
+    console.log("Received order_created event");
+    const body = req.body;
+    const event = body.meta.event_name;
 
-      if (event === "subscription_created") {
-        const userId = body.meta.custom_data.user_id;
-        const paymentDate = body.data.attributes.created_at;
-        const subscriptionId = body.data.id;
-        const customerId = body.data.attributes.customer_id;
-        const expiresAt = body.data.attributes.ends_at;
-        const renewsAt = body.data.attributes.renews_at;
+    console.log(body);
 
-        const userDocRef = admin.firestore().collection("users").doc(userId);
-        const userDoc = await userDocRef.get();
-
-        if (!userDoc.exists) {
-          console.error("No matching user found for uid:", userId);
-          return res.status(404).send("No matching user found");
-        }
-
-        await userDocRef.set(
-          {
-            paidAt: paymentDate,
-            subscriptionId: subscriptionId,
-            customerId: customerId,
-            status: "active",
-            expiresAt: expiresAt,
-            renewsAt: renewsAt,
-          },
-          { merge: true }
-        );
-
-        console.log("Subscription created successfully");
-        res.status(200).send("Subscription created successfully");
-      } else {
-        console.error("Unhandled event type");
-        res.status(400).send("Unhandled event type");
-      }
-    } catch (error) {
-      console.error("Error processing event:", error.message || error);
-      res.status(500).send("Internal Server Error");
-    }
-  }
-);
-
-exports.handleSubscriptionExpired = functions.https.onRequest(
-  async (req, res) => {
-    try {
-      verifyLemonSqueezySignature(req);
-
-      console.log("Received subscription_expired event");
-      if (req.method !== "POST") {
-        return res.status(405).send("Method Not Allowed");
-      }
-
-      const body = req.body;
-      console.log("Body: ", body);
-      const event = body.meta.event_name;
-      console.log("Event: ", event);
-
-      if (event !== "subscription_expired") {
-        return res
-          .status(400)
-          .send("Bad Request: Event type is not subscription_expired");
-      }
-
+    if (event === "order_created") {
+      console.log(event);
       const userId = body.meta.custom_data.user_id;
       const paymentDate = body.data.attributes.created_at;
       const customerId = body.data.attributes.customer_id;
+      const expiresAt = body.data.attributes.ends_at;
+      const orderId = body.data.id;
+      const variant = body.data.attributes.first_order_item.variant_name;
+      console.log("Variant:", variant);
 
       const userDocRef = admin.firestore().collection("users").doc(userId);
       const userDoc = await userDocRef.get();
@@ -156,30 +101,31 @@ exports.handleSubscriptionExpired = functions.https.onRequest(
       }
 
       await userDocRef.set(
-        {
-          paidAt: paymentDate,
-          customerId: customerId,
-          status: "expired",
-        },
-        { merge: true }
+          {
+            paidAt: paymentDate,
+            customerId: customerId,
+            orderId: orderId,
+            variant: variant,
+            expiresAt: expiresAt,
+          },
+          {merge: true},
       );
 
-      return res
-        .status(200)
-        .send("User subscription status updated to expired successfully");
-    } catch (error) {
-      console.error(
-        "Error handling subscription_expired event:",
-        error.message || error
-      );
-      return res.status(500).send("Internal Server Error");
+      console.log("Subscription created successfully");
+      res.status(200).send("Subscription created successfully");
+    } else {
+      console.error("Unhandled event type");
+      res.status(400).send("Unhandled event type");
     }
+  } catch (error) {
+    console.error("Error processing event:", error.message || error);
+    res.status(500).send("Internal Server Error");
   }
-);
+});
 
-function formatDateToCustomISOString(date) {
-  const isoString = date.toISOString().split(".")[0];
-  const microseconds = "000000";
-  const formattedDate = `${isoString}.${microseconds}Z`;
-  return formattedDate;
-}
+// function formatDateToCustomISOString(date) {
+//   const isoString = date.toISOString().split(".")[0];
+//   const microseconds = "000000";
+//   const formattedDate = `${isoString}.${microseconds}Z`;
+//   return formattedDate;
+// }
