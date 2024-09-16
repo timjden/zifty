@@ -54,7 +54,8 @@ function updateUI(
   handleResume,
   handleCancel
 ) {
-  //console.log(response);
+  console.log("Updating UI");
+  console.log(response);
   // Disable all toggle switches until UI is updated
   const toggleSwitches = document.querySelectorAll("input[type=checkbox]");
   toggleSwitches.forEach((toggle) => {
@@ -198,145 +199,151 @@ function updateUI(
   toggleSwitches.forEach((toggle) => {
     toggle.disabled = false;
   });
+  console.log("UI updated");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM loaded");
   const loadingDotsHTML =
     '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
 
   // Check if the browser is Chrome
-  chrome.runtime.sendMessage({ message: "checkBrowser" }, function (response) {
-    if (!response.isChrome) {
-      // Display a message and stop further execution if the browser is not supported
-      document.body.innerHTML =
-        '<p style="font-size: large;"><span class="emoji">🚫</span> This browser is not supported. Currently, Zifty only works with Google Chrome.</p>';
-      return;
-    }
+  // chrome.runtime.sendMessage({ message: "checkBrowser" }, function (response) {
+  //   if (!response.isChrome) {
+  //     console.log("Browser is not supported.");
+  //     // Display a message and stop further execution if the browser is not supported
+  //     document.body.innerHTML =
+  //       '<p style="font-size: large;"><span class="emoji">🚫</span> This browser is not supported. Currently, Zifty only works with Google Chrome.</p>';
+  //     return;
+  //   }
 
-    // Proceed to get session details if the browser is supported
-    chrome.runtime.sendMessage({ message: "getSessionDetails" }, (response) => {
-      updateUI(
-        response,
-        handleSignIn,
-        handleLogout,
-        handleSubscribe,
-        handleResume,
-        handleCancel
-      );
-    });
+  //   console.log("Browser is supported.");
 
-    function handleSignIn() {
-      authButton.innerHTML = loadingDotsHTML;
-      chrome.runtime.sendMessage({ message: "signIn" }, (response) => {
-        if (response.success) {
-          chrome.runtime.sendMessage(
-            { message: "getSessionDetails" },
-            (response) => {
-              updateUI(
-                response,
-                handleSignIn,
-                handleLogout,
-                handleSubscribe,
-                handleResume,
-                handleCancel
-              );
-            }
-          );
-        }
-      });
-    }
-
-    const handleLogout = () => {
-      authButton.innerHTML = loadingDotsHTML;
-      chrome.runtime.sendMessage({ message: "signOut" }, (response) => {
-        if (response.success) {
-          chrome.runtime.sendMessage(
-            { message: "getSessionDetails" },
-            (response) => {
-              updateUI(
-                response,
-                handleSignIn,
-                handleLogout,
-                handleSubscribe,
-                handleResume,
-                handleCancel
-              );
-            }
-          );
-        }
-      });
-    };
-
-    const handleSubscribe = () => {
-      subscriptionButton.innerHTML = loadingDotsHTML;
-      chrome.runtime.sendMessage(
-        { message: "createSubscription" },
-        (response) => {
-          if (response.success) {
-            // No need to update UI here since the user will be redirected to the payment page, and the UI update will be triggered when the user returns
-            try {
-              chrome.tabs.create({
-                url:
-                  "https://zifty.lemonsqueezy.com/buy/108ac084-c9a0-4c10-bd31-0a2f4552c7bf?checkout[custom][user_id]=" +
-                  response.currentUser.uid,
-              });
-            } catch (error) {
-              console.error("Failed to subscribe:", error.message || error);
-            }
-          }
-        }
-      );
-    };
-
-    const handleResume = () => {
-      subscriptionButton.innerHTML = loadingDotsHTML;
-      chrome.runtime.sendMessage(
-        { message: "resumeSubscription" },
-        (response) => {
-          if (response.success) {
-            chrome.runtime.sendMessage(
-              { message: "getSessionDetails" },
-              (response) => {
-                updateUI(
-                  response,
-                  handleSignIn,
-                  handleLogout,
-                  handleSubscribe,
-                  handleResume,
-                  handleCancel
-                );
-              }
-            );
-          }
-        }
-      );
-    };
-
-    const handleCancel = () => {
-      subscriptionButton.innerHTML = loadingDotsHTML;
-      chrome.runtime.sendMessage(
-        { message: "cancelSubscription" },
-        (response) => {
-          if (response.success) {
-            chrome.runtime.sendMessage(
-              { message: "getSessionDetails" },
-              (response) => {
-                updateUI(
-                  response,
-                  handleSignIn,
-                  handleLogout,
-                  handleSubscribe,
-                  handleResume,
-                  handleCancel
-                );
-              }
-            );
-          }
-        }
-      );
-    };
+  // Proceed to get session details if the browser is supported
+  chrome.runtime.sendMessage({ message: "getSessionDetails" }, (response) => {
+    updateUI(
+      response,
+      handleSignIn,
+      handleLogout,
+      handleSubscribe,
+      handleResume,
+      handleCancel
+    );
   });
+
+  function handleSignIn() {
+    authButton.innerHTML = loadingDotsHTML;
+    console.log("Sending sign-in message");
+    chrome.runtime.sendMessage({ message: "signIn" }, (response) => {
+      if (response.success) {
+        chrome.runtime.sendMessage(
+          { message: "getSessionDetails" },
+          (response) => {
+            updateUI(
+              response,
+              handleSignIn,
+              handleLogout,
+              handleSubscribe,
+              handleResume,
+              handleCancel
+            );
+          }
+        );
+      }
+    });
+  }
+
+  const handleLogout = () => {
+    authButton.innerHTML = loadingDotsHTML;
+    chrome.runtime.sendMessage({ message: "signOut" }, (response) => {
+      if (response.success) {
+        chrome.runtime.sendMessage(
+          { message: "getSessionDetails" },
+          (response) => {
+            updateUI(
+              response,
+              handleSignIn,
+              handleLogout,
+              handleSubscribe,
+              handleResume,
+              handleCancel
+            );
+          }
+        );
+      }
+    });
+  };
+
+  const handleSubscribe = () => {
+    subscriptionButton.innerHTML = loadingDotsHTML;
+    chrome.runtime.sendMessage(
+      { message: "createSubscription" },
+      (response) => {
+        if (response.success) {
+          // No need to update UI here since the user will be redirected to the payment page, and the UI update will be triggered when the user returns
+          try {
+            chrome.tabs.create({
+              url:
+                "https://zifty.lemonsqueezy.com/buy/108ac084-c9a0-4c10-bd31-0a2f4552c7bf?checkout[custom][user_id]=" +
+                response.currentUser.uid,
+            });
+          } catch (error) {
+            console.error("Failed to subscribe:", error.message || error);
+          }
+        }
+      }
+    );
+  };
+
+  const handleResume = () => {
+    subscriptionButton.innerHTML = loadingDotsHTML;
+    chrome.runtime.sendMessage(
+      { message: "resumeSubscription" },
+      (response) => {
+        if (response.success) {
+          chrome.runtime.sendMessage(
+            { message: "getSessionDetails" },
+            (response) => {
+              updateUI(
+                response,
+                handleSignIn,
+                handleLogout,
+                handleSubscribe,
+                handleResume,
+                handleCancel
+              );
+            }
+          );
+        }
+      }
+    );
+  };
+
+  const handleCancel = () => {
+    subscriptionButton.innerHTML = loadingDotsHTML;
+    chrome.runtime.sendMessage(
+      { message: "cancelSubscription" },
+      (response) => {
+        if (response.success) {
+          chrome.runtime.sendMessage(
+            { message: "getSessionDetails" },
+            (response) => {
+              updateUI(
+                response,
+                handleSignIn,
+                handleLogout,
+                handleSubscribe,
+                handleResume,
+                handleCancel
+              );
+            }
+          );
+        }
+      }
+    );
+  };
 });
+// });
 
 function formatDate(isoString) {
   const date = new Date(isoString);
