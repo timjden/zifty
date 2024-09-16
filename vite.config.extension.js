@@ -5,6 +5,7 @@ import manifest from "./manifest.json";
 export default defineConfig({
   plugins: [crx({ manifest })],
   build: {
+    outDir: "dist-extension",
     rollupOptions: {
       input: {
         offscreen: "offscreen.html",
