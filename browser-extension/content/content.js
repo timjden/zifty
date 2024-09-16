@@ -3,7 +3,6 @@
 
 let sessionDetails = null;
 let isSubscribed = null;
-let isSupportedBrowser = null;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -25,10 +24,6 @@ chrome.runtime.onMessage.addListener((request) => {
     //console.log("sessionDetails:", request.sessionDetails);
     sessionDetails = request.sessionDetails;
     isSubscribed = request.isSubscribed;
-  } else if (request.message === "isSupportedBrowser") {
-    //console.log("Received supported browser status from background");
-    //console.log("isSupportedBrowser:", request.isSupportedBrowser);
-    isSupportedBrowser = request.isSupportedBrowser;
   }
 });
 
@@ -52,8 +47,6 @@ window.addEventListener("load", async () => {
   //console.log("Page loaded");
   chrome.runtime.sendMessage({ message: "isUserSubscribed" });
   await waitForNotNull(() => isSubscribed);
-  chrome.runtime.sendMessage({ message: "checkBrowser" });
-  await waitForNotNull(() => isSupportedBrowser);
   if (!isSupportedSite()) {
     //console.log("This page is not supported by Zifty");
     return;
@@ -89,8 +82,6 @@ chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === "URL changed") {
     chrome.runtime.sendMessage({ message: "isUserSubscribed" });
     await waitForNotNull(() => isSubscribed);
-    chrome.runtime.sendMessage({ message: "checkBrowser" });
-    await waitForNotNull(() => isSupportedBrowser);
     //console.log("URL changed");
     if (!isSupportedSite()) {
       //console.log("This page is not supported by Zifty");
@@ -245,12 +236,6 @@ function extractAliExpressSearchQuery(url) {
 }
 
 function isSupportedSite() {
-  if (!isSupportedBrowser) {
-    //console.log("This browser is not supported.");
-    isSupportedBrowser = null;
-    return false;
-  }
-  isSupportedBrowser = null;
   // Check if this is a Google search page with product listings
   const googleBuyPanelXpath =
     "//div[contains(concat(' ', normalize-space(@class), ' '), ' cu-container ')]";
