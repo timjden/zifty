@@ -1,33 +1,146 @@
-import { logLocation } from "./geolocation.js";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  setPersistence,
-  indexedDBLocalPersistence,
-  signInWithCredential,
-  GoogleAuthProvider,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithCredential,
   signOut,
 } from "firebase/auth/web-extension";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { logLocation } from "./geolocation.js";
+import firebaseConfig from "./firebaseConfig.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDgWfdkRTROBGq2JjNzZmRVldgdr8iayLg",
-  authDomain: "zifty-4e74a.firebaseapp.com",
-  projectId: "zifty-4e74a",
-  storageBucket: "zifty-4e74a.appspot.com",
-  messagingSenderId: "453820350601",
-  appId: "1:453820350601:web:26cc05e968085de657c658",
-  measurementId: "G-VEL4KBV88V",
-};
+const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
 
-//console.log("Zifty background script is running.");
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    console.log("User is signed in:", user);
+  } else {
+    console.log("User is not signed in");
+    // try {
+    //   await signInWithCredentialFlow();
+    // } catch (error) {
+    //   console.error(
+    //     "Sign-in with credential failed, falling back to popup auth:",
+    //     error
+    //   );
+    //   await authenticateWithPopup();
+    // }
+  }
+});
+
+// This function simulates the token-based sign-in attempt
+async function signInWithCredentialFlow() {
+  // Attempt to retrieve stored credential/token from Firebase (automatically managed by Firebase)
+  const user = auth.currentUser;
+
+  if (user) {
+    // User is authenticated, no need for further action
+    console.log("Already authenticated with existing credentials.");
+  } else {
+    // Firebase will auto-manage the token refresh and sign-in states, no manual intervention needed.
+    throw new Error("No existing session. Token refresh failed.");
+  }
+}
+
+// Fallback to firebaseAuth (popup-based authentication)
+async function authenticateWithPopup() {
+  try {
+    // Call your firebaseAuth method to start the popup-based auth flow
+    const authResponse = await firebaseAuth(); // Implement firebaseAuth elsewhere
+    console.log("Token");
+    const idToken = authResponse._tokenResponse.oauthAccessToken;
+    console.log(idToken);
+    const credential = GoogleAuthProvider.credential(null, idToken);
+    console.log("Credential");
+    console.log(credential);
+    const result = await signInWithCredential(auth, credential);
+    const user = result.user;
+    console.log("Signed in successfully with popup.");
+    return user;
+  } catch (error) {
+    console.error("Popup authentication failed:", error);
+  }
+}
+
+let creating;
+
+async function hasDocument() {
+  const matchedClients = await clients.matchAll();
+  return matchedClients.some(
+    (c) => c.url === chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH)
+  );
+}
+
+async function setupOffscreenDocument(path) {
+  console.log("In setupOffscreenDocument");
+  if (!(await hasDocument())) {
+    console.log("Creating offscreen document...");
+    if (creating) {
+      console.log("Waiting for existing offscreen document to be created...");
+      await creating;
+    } else {
+      console.log("Creating new offscreen document...");
+      creating = chrome.offscreen.createDocument({
+        url: path,
+        reasons: [chrome.offscreen.Reason.DOM_SCRAPING],
+        justification: "authentication",
+      });
+      await creating;
+      creating = null;
+    }
+  }
+}
+
+async function closeOffscreenDocument() {
+  if (!(await hasDocument())) {
+    return;
+  }
+  await chrome.offscreen.closeDocument();
+}
+
+function getFirebaseAuth() {
+  return new Promise(async (resolve, reject) => {
+    const auth = await chrome.runtime.sendMessage({
+      type: "firebase-auth",
+      target: "offscreen",
+    });
+    auth?.name !== "FirebaseError" ? resolve(auth) : reject(auth);
+  });
+}
+
+async function firebaseAuth() {
+  console.log("Setting up offscreen document...");
+  await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
+  console.log("Offscreen document setup");
+
+  const auth = await getFirebaseAuth()
+    .then((auth) => {
+      console.log("User Authenticated", auth);
+      return auth;
+    })
+    .catch((err) => {
+      if (err.code === "auth/operation-not-allowed") {
+        console.error(
+          "You must enable an OAuth provider in the Firebase" +
+            " console in order to use signInWithPopup. This sample" +
+            " uses Google by default."
+        );
+      } else {
+        console.error(err);
+        return err;
+      }
+    })
+    .finally(closeOffscreenDocument);
+
+  return auth;
+}
 
 // Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
@@ -39,7 +152,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   }
 });
 
-// Receive the search details from content script
+// Handle messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const handleSearchDetails = async () => {
     try {
@@ -122,13 +235,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   };
 
   async function getSessionFromDatabase() {
+    console.log("Getting session details from database...");
     const sessionDetails = {
       isUserSignedIn: false,
       hasSubscription: false,
       isSubscriptionActive: false,
       isSubscriptionCancelled: false,
       expiresAt: null,
-      renewsAt: null,
       toggleStatuses: {
         amazon: true,
         walmart: true,
@@ -140,37 +253,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         bing: false,
       },
     };
-
+    const user = auth.currentUser;
     try {
-      // Set session persistence to IndexedDB for service workers or background scripts
-      await setPersistence(auth, indexedDBLocalPersistence);
-
-      const user = await new Promise((resolve, reject) => {
-        const unsubscribe = onAuthStateChanged(
-          auth,
-          (user) => {
-            unsubscribe(); // Stop listening once we've got the auth state
-            resolve(user);
-          },
-          reject
-        );
-      });
-
       if (user) {
-        //console.log("User:", user);
+        console.log("User:", user);
         // Refresh token logic
         await user.getIdToken(true); // Force refresh the token to ensure it is up-to-date
 
         //console.log("User:", user);
         sessionDetails.isUserSignedIn = true;
 
+        console.log("Checking if user is subscribed");
         const isSubscribed = await isUserSubscribed(user.uid);
         sessionDetails.hasSubscription = isSubscribed;
 
         if (isSubscribed) {
-          const isCancelled = await isUserCancelled(user.uid);
-          sessionDetails.isSubscriptionActive = !isCancelled;
-          sessionDetails.isSubscriptionCancelled = isCancelled;
+          sessionDetails.isSubscriptionActive = true;
+          sessionDetails.isSubscriptionCancelled = false;
 
           // Fetch the toggle statuses from individual fields in the user's document
           const userDocRef = doc(db, "users", user.uid);
@@ -180,7 +279,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             const userData = userDoc.data();
             //console.log("User data:", userData);
             sessionDetails.expiresAt = userData.expiresAt || null;
-            sessionDetails.renewsAt = userData.renewsAt || null;
             sessionDetails.toggleStatuses.amazon = userData.amazon || false;
             sessionDetails.toggleStatuses.walmart = userData.walmart || false;
             sessionDetails.toggleStatuses.takealot = userData.takealot || false;
@@ -226,106 +324,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   const getSessionDetails = async () => {
+    console.log("Getting session details");
     const sessionDetails = await getSessionFromDatabase();
-    //console.log("Session details:", sessionDetails);
-    sendResponse(sessionDetails); // Send the response after all async operations
+    sendResponse(sessionDetails);
     return sessionDetails;
   };
 
   const handleSignIn = async () => {
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    const tryGetAuthToken = async () => {
-      try {
-        // Clear cached tokens to ensure fresh sign-in
-        chrome.identity.clearAllCachedAuthTokens(function () {});
-
-        // Check if the user is signed into Chrome
-        chrome.identity.getProfileUserInfo(async (userInfo) => {
-          if (!userInfo.email) {
-            // Trigger Chrome sign-in first if the user is not signed into Chrome
-            chrome.identity.getAuthToken(
-              { interactive: true },
-              async (token) => {
-                if (chrome.runtime.lastError || !token) {
-                  console.error(
-                    "Chrome sign-in error:",
-                    chrome.runtime.lastError
-                  );
-                  console.error(
-                    "Chrome sign-in error (detailed):",
-                    JSON.stringify(chrome.runtime.lastError, null, 2)
-                  );
-
-                  if (retryCount < maxRetries) {
-                    retryCount++;
-                    await tryGetAuthToken(); // Retry the sign-in process
-                  } else {
-                    sendResponse({
-                      success: false,
-                      error: "Failed to sign in to Chrome after retries",
-                    });
-                  }
-                } else {
-                  await signInToZifty(token); // Proceed to sign into Zifty after successful Chrome sign-in
-                }
-              }
-            );
-          } else {
-            //console.log("User is already signed into Chrome.");
-            // If the user is already signed into Chrome, get the OAuth token directly
-            chrome.identity.getAuthToken(
-              { interactive: true },
-              async (token) => {
-                if (chrome.runtime.lastError || !token) {
-                  console.error(
-                    "Error getting OAuth token:",
-                    chrome.runtime.lastError
-                  );
-                  console.error(
-                    "Error getting OAuth token (detailed):",
-                    JSON.stringify(chrome.runtime.lastError, null, 2)
-                  );
-
-                  if (retryCount < maxRetries) {
-                    retryCount++;
-                    await tryGetAuthToken(); // Retry the OAuth token request
-                  } else {
-                    sendResponse({
-                      success: false,
-                      error: "Failed to get Google OAuth token after retries",
-                    });
-                  }
-                } else {
-                  await signInToZifty(token); // Proceed to sign into Zifty after getting the OAuth token
-                }
-              }
-            );
-          }
-        });
-      } catch (error) {
-        console.error("Sign-in failed:", error);
-        console.error(
-          "Sign-in failed (detailed):",
-          JSON.stringify(error, null, 2)
-        );
-        sendResponse({ success: false, error: error.message || error });
-      }
-    };
-
-    // Start the sign-in process
-    await tryGetAuthToken();
-  };
-
-  // Helper function to sign in to Zifty with Google OAuth
-  async function signInToZifty(token) {
-    //console.log("Signing in to Zifty with Google OAuth...");
+    console.log("Signing in to Zifty with Google OAuth...");
+    const user = await authenticateWithPopup();
     try {
-      const credential = GoogleAuthProvider.credential(null, token);
-      const result = await signInWithCredential(auth, credential);
-      const user = result.user;
-
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -333,7 +341,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         await setDoc(userDocRef, {
           uid: user.uid,
           paidAt: null,
-          cancelledAt: null,
           subscriptionId: null,
           status: null,
           customerId: null,
@@ -353,7 +360,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.error("Firebase Google Sign-In failed:", error);
       sendResponse({ success: false, error: error.message || error });
     }
-  }
+  };
 
   const handleSignOut = async () => {
     signOut(auth)
@@ -365,115 +372,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error("Sign out failed:", error.message || error);
         sendResponse({ success: false, error: error.message || error });
       });
-  };
-
-  const handleResume = async () => {
-    try {
-      const userDocRef = doc(db, "users", auth.currentUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const subscriptionId = userData.subscriptionId;
-
-        if (!subscriptionId) {
-          throw new Error("No subscription ID found for this user.");
-        }
-
-        const resumeSubscription = httpsCallable(
-          functions,
-          "resumeSubscription"
-        );
-
-        await resumeSubscription({ subscriptionId })
-          .then(async (result) => {
-            //console.log("Subscription resumed:", result.data);
-
-            // Start polling to check for the updated renewedAt timestamp
-            await pollForUpdate(userDocRef, "renewedAt", (renewedAt) => {
-              if (renewedAt) {
-                const renewedAtTime = new Date(renewedAt).getTime();
-                const currentTime = Date.now();
-                const threshold = 5000; // 10 seconds threshold
-                return currentTime - renewedAtTime <= threshold;
-              }
-              return false;
-            });
-
-            sendResponse({ success: true });
-          })
-          .catch((error) => {
-            sendResponse({ success: false, error: error.message });
-            console.error("Error resuming subscription:", error.message);
-            throw new Error("Failed to resume the subscription.");
-          });
-      } else {
-        sendResponse({
-          success: false,
-          error: "User document does not exist.",
-        });
-        throw new Error("User document does not exist.");
-      }
-    } catch (error) {
-      console.error("Failed to resume subscription:", error.message || error);
-      sendResponse({ success: false, error: error.message || error });
-    }
-  };
-
-  const handleCancel = async () => {
-    try {
-      const userDocRef = doc(db, "users", auth.currentUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const subscriptionId = userData.subscriptionId;
-
-        if (!subscriptionId) {
-          sendResponse({
-            success: false,
-            error: "No subscription ID found for this user.",
-          });
-          throw new Error("No subscription ID found for this user.");
-        }
-
-        const cancelSubscription = httpsCallable(
-          functions,
-          "cancelSubscription"
-        );
-
-        await cancelSubscription({ subscriptionId })
-          .then(async (result) => {
-            //console.log("Subscription cancelled:", result.data);
-
-            // Start polling to check for the updated cancelledAt timestamp
-            await pollForUpdate(userDocRef, "cancelledAt", (cancelledAt) => {
-              if (cancelledAt) {
-                const cancelledAtTime = new Date(cancelledAt).getTime();
-                const currentTime = Date.now();
-                const threshold = 5000; // 10 seconds threshold
-                return currentTime - cancelledAtTime <= threshold;
-              }
-              return false;
-            });
-
-            sendResponse({ success: true });
-          })
-          .catch((error) => {
-            console.error("Error canceling subscription:", error.message);
-            sendResponse({ success: false, error: error.message });
-            throw new Error("Failed to cancel the subscription.");
-          });
-      } else {
-        sendResponse({
-          success: false,
-          error: "User document does not exist.",
-        });
-        throw new Error("User document does not exist.");
-      }
-    } catch (error) {
-      console.error("Failed to cancel subscription:", error.message || error);
-      sendResponse({ success: false, error: error.message || error });
-    }
   };
 
   const handleCreateSubscription = async () => {
@@ -560,36 +458,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Keep the message channel open for asynchronous response
 });
 
-const pollForUpdate = async (
-  docRef,
-  fieldName,
-  checkUpdateCondition,
-  interval = 1000,
-  maxAttempts = 10
-) => {
-  let attempts = 0;
+// // const pollForUpdate = async (
+// //   docRef,
+// //   fieldName,
+// //   checkUpdateCondition,
+// //   interval = 1000,
+// //   maxAttempts = 10
+// // ) => {
+// //   let attempts = 0;
 
-  while (attempts < maxAttempts) {
-    const docSnapshot = await getDoc(docRef);
-    if (docSnapshot.exists()) {
-      const docData = docSnapshot.data();
-      const fieldValue = docData[fieldName];
+// //   while (attempts < maxAttempts) {
+// //     const docSnapshot = await getDoc(docRef);
+// //     if (docSnapshot.exists()) {
+// //       const docData = docSnapshot.data();
+// //       const fieldValue = docData[fieldName];
 
-      if (checkUpdateCondition(fieldValue)) {
-        // If the field satisfies the condition, stop polling
-        return;
-      }
-    }
+// //       if (checkUpdateCondition(fieldValue)) {
+// //         // If the field satisfies the condition, stop polling
+// //         return;
+// //       }
+// //     }
 
-    // Wait for the specified interval before checking again
-    await new Promise((resolve) => setTimeout(resolve, interval));
+// //     // Wait for the specified interval before checking again
+// //     await new Promise((resolve) => setTimeout(resolve, interval));
 
-    attempts++;
-  }
+// //     attempts++;
+// //   }
 
-  // If maxAttempts is reached and the condition is not met, throw an error
-  throw new Error(`Timeout: ${fieldName} was not updated in time.`);
-};
+// //   // If maxAttempts is reached and the condition is not met, throw an error
+// //   throw new Error(`Timeout: ${fieldName} was not updated in time.`);
+// // };
 
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   let listings = [];
@@ -714,33 +612,6 @@ async function isUserSubscribed(uid) {
   }
 }
 
-async function isUserCancelled(uid) {
-  try {
-    const userDocRef = doc(db, "users", uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      //console.log("User exists in Firestore:", uid);
-      const userData = userDoc.data();
-      const status = userData.status;
-
-      //console.log("Subscription status:", status);
-
-      if (status === "cancelled") {
-        return true; // User has cancelled their subscription
-      }
-    }
-
-    return false; // User has not cancelled or does not exist
-  } catch (error) {
-    console.error(
-      "Failed to check cancellation status:",
-      error.message || error
-    );
-    return false;
-  }
-}
-
 function convertCurrencyCode(price) {
   let formattedPrice = price;
 
@@ -751,4 +622,4 @@ function convertCurrencyCode(price) {
   return formattedPrice;
 }
 
-export { fetchFromFacebookMarketplace, isUserSubscribed, isUserCancelled }; // Export this for testing
+export { fetchFromFacebookMarketplace, isUserSubscribed }; // Export this for testing
