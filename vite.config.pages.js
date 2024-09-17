@@ -5,8 +5,9 @@ export default defineConfig({
     outDir: "dist-pages",
     rollupOptions: {
       input: {
-        privacy: "pages/privacy-policy.html",
-        signInWithPopup: "pages/sign-in-with-popup.html",
+        privacy: "./firebase-pages/privacy-policy.html",
+        termsOfService: "./firebase-pages/terms-of-service.html",
+        signInWithPopup: "./firebase-pages/sign-in-with-popup.html",
       },
     },
   },
