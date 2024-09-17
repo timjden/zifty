@@ -2,7 +2,8 @@
 chrome.runtime.onMessage.addListener(handleMessages);
 
 // The public URL for the authentication iframe
-const _URL = "https://zifty-4e74a.web.app/pages/sign-in-with-popup.html";
+const _URL =
+  "https://zifty-4e74a.web.app/firebase-pages/sign-in-with-popup.html";
 console.log("Using URL:", _URL);
 const iframe = document.createElement("iframe");
 console.log("Iframe created:", iframe);
