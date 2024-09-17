@@ -87,10 +87,27 @@ exports.handleOrderCreated = functions.https.onRequest(async (req, res) => {
       const userId = body.meta.custom_data.user_id;
       const paymentDate = body.data.attributes.created_at;
       const customerId = body.data.attributes.customer_id;
-      const expiresAt = body.data.attributes.ends_at;
       const orderId = body.data.id;
       const variant = body.data.attributes.first_order_item.variant_name;
       console.log("Variant:", variant);
+
+      let expiresAt = body.data.attributes.created_at; // Default to payment date
+
+      if (variant === "Week") {
+        console.log("Variant is Week");
+        const expiresAtDate = new Date(expiresAt);
+        expiresAtDate.setDate(expiresAtDate.getDate() + 7);
+        expiresAt = formatDateToCustomISOString(expiresAtDate);
+        console.log("Set expiresAt to:", expiresAt);
+      } else if (variant === "Month") {
+        const expiresAtDate = new Date(expiresAt);
+        expiresAtDate.setMonth(expiresAtDate.getMonth() + 1);
+        expiresAt = formatDateToCustomISOString(expiresAtDate);
+      } else if (variant === "Year") {
+        const expiresAtDate = new Date(expiresAt);
+        expiresAtDate.setFullYear(expiresAtDate.getFullYear() + 1);
+        expiresAt = formatDateToCustomISOString(expiresAtDate);
+      }
 
       const userDocRef = admin.firestore().collection("users").doc(userId);
       const userDoc = await userDocRef.get();
@@ -123,9 +140,9 @@ exports.handleOrderCreated = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// function formatDateToCustomISOString(date) {
-//   const isoString = date.toISOString().split(".")[0];
-//   const microseconds = "000000";
-//   const formattedDate = `${isoString}.${microseconds}Z`;
-//   return formattedDate;
-// }
+function formatDateToCustomISOString(date) {
+  const isoString = date.toISOString().split(".")[0];
+  const microseconds = "000000";
+  const formattedDate = `${isoString}.${microseconds}Z`;
+  return formattedDate;
+}
