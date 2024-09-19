@@ -197,7 +197,8 @@ input:checked + .slider:before {
 }
 
 #toggle-box {
-  height: 250px;
+  height: 120px;
+  padding: 20px;
 }
 
 @font-face {
@@ -223,7 +224,16 @@ body {
   font-family: "Roboto";
 }
 
+.toggle-emoji {
+  font-family: "NotoColorEmoji";
+  filter: grayscale(100%);
+}
+
 .emoji {
+  font-family: "NotoColorEmoji";
+}
+
+.free-tier-emoji {
   font-family: "NotoColorEmoji";
 }
 
