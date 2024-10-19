@@ -1,13 +1,11 @@
+// import { createOverlay, injectStylesheet } from "./overlay.js";
+
 console.log("Zifty has injected a content script into this page.");
 
-const ITEMS_PER_OVERLAY_PAGE = 6; // The number of listings to show per page in the Zifty overlay
-let currentIndex = 0; // Used to track pagination in the Zifty overlay
 let listingsData; // Place to store the listings received from background (e.g. Facebook Marketplace API)
 let currentSearchDetails = { page: null, query: null }; // Place to store the user's search query and the page they are on
 let sendingSearchDetailsToBackground = false; // Flag to prevent multiple, concurrent requests for listings
 let ziftyOverlay; // Holds the Zifty overlay element
-let sessionDetails = null; // Holds the user's session details (e.g. toggle statuses)
-let isSubscribed = null; // Holds the user's subscription status
 
 // Delete the overlay if the user navigates away from a supported site
 if (!isSupportedSite()) {
@@ -17,17 +15,8 @@ if (!isSupportedSite()) {
   }
 }
 
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.message === "isSubscribed") {
-    sessionDetails = request.sessionDetails;
-    isSubscribed = request.isSubscribed;
-  }
-});
-
 // When a page loads, send a message to the background script asking for the relevant listings
 window.addEventListener("load", async () => {
-  chrome.runtime.sendMessage({ message: "isUserSubscribed" });
-  await waitForNotNull(() => isSubscribed);
   if (!isSupportedSite()) {
     console.log(
       "This page is not supported by Zifty, or has been disabled by the user"
@@ -62,8 +51,6 @@ window.addEventListener("load", async () => {
 chrome.runtime.onMessage.addListener(async (request) => {
   if (request.message === "URL changed") {
     console.log("URL changed");
-    chrome.runtime.sendMessage({ message: "isUserSubscribed" });
-    await waitForNotNull(() => isSubscribed);
     if (!isSupportedSite()) {
       try {
         const overlay = document.getElementById("zifty-overlay");
@@ -98,8 +85,12 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
     currentIndex = 0; // Clear the index used to track pagination
     ziftyOverlay = createZiftyOverlay();
-  } else if (request.message === "Listings") {
-    // Once background has the listings data from an external datasource (e.g. Facebook Marketplace API) it sends them to content
+  }
+});
+
+// Now listen for when the background script has got the listings from Facebook Marketplace and is ready to send them to content
+chrome.runtime.onMessage.addListener(async (request) => {
+  if (request.message === "Listings") {
     sendingSearchDetailsToBackground = false; // Set the flag to false after receiving the listings
 
     // If the listings are the same as the previous listings, return
@@ -115,12 +106,6 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForNotNull(variableAccessor, interval = 1000) {
-  while (variableAccessor() === null) {
-    await sleep(interval); // sleep for the specified interval (default is 1 second)
-  }
 }
 
 function createZiftyOverlay() {
@@ -148,6 +133,7 @@ function getSearchDetails() {
   const url = new URL(window.location.href);
   const hostname = url.hostname;
 
+  // Here we define the rules for extracting the search query from each supported site
   if (/\.amazon\./.test(hostname)) {
     searchDetails.page = "amazon";
     searchDetails.query = extractQueryParamValue(url.href, "k");
@@ -202,6 +188,7 @@ function extractAliExpressSearchQuery(url) {
   }
 }
 
+// Check if we want to show the Zifty overlay on this page
 function isSupportedSite() {
   // Check if this is a Google search page with product listings
   const googleBuyPanelXpath =
@@ -236,8 +223,8 @@ function isSupportedSite() {
     url.pathname === "/search" &&
     bingBuyPanelExists;
 
-  // Check if this is a free tier site (e.g. Amazon, Walmart, Takealot, Bol, Temu, AliExpress)
-  const isFreeTierSite =
+  // Check if this is a supported store (e.g. Amazon, Walmart, Takealot, Bol, Temu, AliExpress)
+  const isSupportedStore =
     (/^www\.amazon\./.test(url.hostname) &&
       url.pathname === "/s" &&
       (sessionDetails?.toggleStatuses.amazon ||
@@ -278,23 +265,20 @@ function isSupportedSite() {
       /\/wholesale-/.test(url.pathname) &&
       (sessionDetails?.toggleStatuses.aliexpress ||
         !sessionDetails?.isUserSignedIn));
-  const isPaidTierSite =
+  const isSupportedSearchEngine =
     (isGoogleSearchBuyPage && sessionDetails?.toggleStatuses.google) ||
     (isBingSearchBuyPage && sessionDetails?.toggleStatuses.bing);
-  let result;
-  if (isSubscribed) {
-    // Return true if the user is on Amazon\Walmart (free tier) etc. search results or a Google\Bing etc. search page with product listings
-    result = isFreeTierSite || isPaidTierSite;
-  } else {
-    // Return true if the user is on Amazon\Walmart (free tier) etc. search results
-    result = isFreeTierSite;
-  }
+
+  const result = isSupportedStore || isSupportedSearchEngine;
   return result;
 }
 
 // The functions below are used to create the Zifty overlay DOM elements
 
-function createOverlay() {
+const ITEMS_PER_OVERLAY_PAGE = 6; // The number of listings to show per page in the Zifty overlay
+let currentIndex = 0; // Used to track pagination in the Zifty overlay
+
+export function createOverlay() {
   const overlay = document.createElement("div");
   overlay.id = "zifty-overlay";
 
@@ -337,7 +321,7 @@ function createOverlay() {
   return overlay;
 }
 
-function injectStylesheet() {
+export function injectStylesheet() {
   const cssLink = document.createElement("link");
   cssLink.href = chrome.runtime.getURL("browser-extension/content/styles.css");
   cssLink.type = "text/css";

@@ -1,24 +1,9 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
-const crypto = require("crypto"); // Import crypto for signature verification
 require("dotenv").config(); // Load environment variables from .env file
 
-// const LEMON_SQUEEZY_API_KEY = process.env.LEMON_SQUEEZY_API_KEY;
-const LEMON_SQUEEZY_EVENT_SECRET = process.env.LEMON_SQUEEZY_EVENT_SECRET;
-
 admin.initializeApp();
-
-function verifyLemonSqueezySignature(req) {
-  const secret = LEMON_SQUEEZY_EVENT_SECRET;
-  const hmac = crypto.createHmac("sha256", secret);
-  const digest = Buffer.from(hmac.update(req.rawBody).digest("hex"), "utf8");
-  const signature = Buffer.from(req.get("X-Signature") || "", "utf8");
-
-  if (!crypto.timingSafeEqual(digest, signature)) {
-    throw new Error("Invalid signature.");
-  }
-}
 
 exports.completion = functions.https.onRequest(async (req, res) => {
   console.log("Received completion request");
@@ -29,7 +14,7 @@ exports.completion = functions.https.onRequest(async (req, res) => {
 
   const requestHeaders = {
     "Content-Type": "application/json",
-    "Authorization": `Bearer ${apiKey}`,
+    Authorization: `Bearer ${apiKey}`,
   };
 
   const data = {
@@ -57,7 +42,7 @@ exports.completion = functions.https.onRequest(async (req, res) => {
   };
 
   try {
-    const response = await axios.post(url, data, {headers: requestHeaders});
+    const response = await axios.post(url, data, { headers: requestHeaders });
     const completion = response.data;
     console.log("Completion:", completion.choices[0].message.content);
 
@@ -71,78 +56,3 @@ exports.completion = functions.https.onRequest(async (req, res) => {
     });
   }
 });
-
-exports.handleOrderCreated = functions.https.onRequest(async (req, res) => {
-  try {
-    verifyLemonSqueezySignature(req);
-
-    console.log("Received order_created event");
-    const body = req.body;
-    const event = body.meta.event_name;
-
-    console.log(body);
-
-    if (event === "order_created") {
-      console.log(event);
-      const userId = body.meta.custom_data.user_id;
-      const paymentDate = body.data.attributes.created_at;
-      const customerId = body.data.attributes.customer_id;
-      const orderId = body.data.id;
-      const variant = body.data.attributes.first_order_item.variant_name;
-      console.log("Variant:", variant);
-
-      let expiresAt = body.data.attributes.created_at; // Default to payment date
-
-      if (variant === "Week") {
-        console.log("Variant is Week");
-        const expiresAtDate = new Date(expiresAt);
-        expiresAtDate.setDate(expiresAtDate.getDate() + 7);
-        expiresAt = formatDateToCustomISOString(expiresAtDate);
-        console.log("Set expiresAt to:", expiresAt);
-      } else if (variant === "Month") {
-        const expiresAtDate = new Date(expiresAt);
-        expiresAtDate.setMonth(expiresAtDate.getMonth() + 1);
-        expiresAt = formatDateToCustomISOString(expiresAtDate);
-      } else if (variant === "Year") {
-        const expiresAtDate = new Date(expiresAt);
-        expiresAtDate.setFullYear(expiresAtDate.getFullYear() + 1);
-        expiresAt = formatDateToCustomISOString(expiresAtDate);
-      }
-
-      const userDocRef = admin.firestore().collection("users").doc(userId);
-      const userDoc = await userDocRef.get();
-
-      if (!userDoc.exists) {
-        console.error("No matching user found for uid:", userId);
-        return res.status(404).send("No matching user found");
-      }
-
-      await userDocRef.set(
-          {
-            paidAt: paymentDate,
-            customerId: customerId,
-            orderId: orderId,
-            variant: variant,
-            expiresAt: expiresAt,
-          },
-          {merge: true},
-      );
-
-      console.log("Subscription created successfully");
-      res.status(200).send("Subscription created successfully");
-    } else {
-      console.error("Unhandled event type");
-      res.status(400).send("Unhandled event type");
-    }
-  } catch (error) {
-    console.error("Error processing event:", error.message || error);
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-function formatDateToCustomISOString(date) {
-  const isoString = date.toISOString().split(".")[0];
-  const microseconds = "000000";
-  const formattedDate = `${isoString}.${microseconds}Z`;
-  return formattedDate;
-}

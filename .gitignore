@@ -1,6 +1,5 @@
 node_modules
-dist-pages/
-dist/
 dist-extension/
 *.log
-dist.zip
+dist-extension.zip
+.firebase/

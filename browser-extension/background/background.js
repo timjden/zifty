@@ -1,19 +1,4 @@
-import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithCredential,
-  signOut,
-} from "firebase/auth/web-extension";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { logLocation } from "./geolocation.js";
-import firebaseConfig from "./firebaseConfig.js";
-import { firebaseAuth } from "./firebaseAuth.js";
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 // Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
@@ -27,10 +12,13 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
 // Handle messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Handle the search query from the content script, sends it to Facebook Marketplace, and return the results
   const handleSearchDetails = async () => {
     try {
-      const location = await logLocation(); // Get location before sending request to Facebook Marketplace
+      const location = await logLocation(); // Get user location before sending request to Facebook Marketplace
 
+      // If the search query comes from a search engine, it typically will be something like "buy [item] near me".
+      // This query is too verbose for Facebook Marketplace, so we need to simplify it.
       if (request.data.page === "google" || request.data.page === "bing") {
         const headers = {
           "Content-Type": "application/json",
@@ -57,6 +45,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         },
         8 // radius
       );
+
+      // After fetching listings from Facebook Marketplace, send them to the content script
       chrome.tabs.sendMessage(sender.tab.id, {
         message: "Listings",
         query: request.data.query,
@@ -64,196 +54,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       sendResponse({ success: true });
     } catch (error) {
+      // Or if an error occurs, send the error message to the content script
       console.error("Error during searchDetails processing:", error);
       sendResponse({ success: false, error: error.message });
     }
   };
 
-  const handleIsUserSubscribed = async () => {
-    try {
-      const sessionDetails = await getSessionFromDatabase();
-      const user = auth.currentUser;
-      if (user) {
-        const response = await isUserSubscribed(user.uid);
-        if (sender.tab) {
-          chrome.tabs.sendMessage(sender.tab.id, {
-            message: "isSubscribed",
-            isSubscribed: response,
-            sessionDetails,
-          });
-        }
-      } else {
-        if (sender.tab) {
-          chrome.tabs.sendMessage(sender.tab.id, {
-            message: "isSubscribed",
-            isSubscribed: false,
-            sessionDetails,
-          });
-        }
-      }
-      sendResponse({ success: true });
-    } catch (error) {
-      console.error("Error during isUserSubscribed check:", error);
-      sendResponse({ success: false, error: error.message });
-    }
-  };
-
-  async function getSessionFromDatabase() {
-    console.log("Getting session details from database...");
-    const sessionDetails = {
-      isUserSignedIn: false,
-      hasSubscription: false,
-      isSubscriptionActive: false,
-      expiresAt: null,
-      toggleStatuses: {
-        amazon: true,
-        walmart: true,
-        takealot: true,
-        bol: true,
-        temu: true,
-        aliexpress: true,
-        google: false,
-        bing: false,
-      },
-    };
-    const user = auth.currentUser;
-    try {
-      if (user) {
-        await user.getIdToken(true); // Force refresh the token to ensure it is up-to-date
-        sessionDetails.isUserSignedIn = true;
-        const isSubscribed = await isUserSubscribed(user.uid);
-        sessionDetails.hasSubscription = isSubscribed;
-        if (isSubscribed) {
-          sessionDetails.isSubscriptionActive = true;
-          const userDocRef = doc(db, "users", user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            sessionDetails.expiresAt = userData.expiresAt || null;
-            sessionDetails.toggleStatuses.amazon = userData.amazon || false;
-            sessionDetails.toggleStatuses.walmart = userData.walmart || false;
-            sessionDetails.toggleStatuses.takealot = userData.takealot || false;
-            sessionDetails.toggleStatuses.bol = userData.bol || false;
-            sessionDetails.toggleStatuses.temu = userData.temu || false;
-            sessionDetails.toggleStatuses.aliexpress =
-              userData.aliexpress || false;
-            sessionDetails.toggleStatuses.google = userData.google || false;
-            sessionDetails.toggleStatuses.bing = userData.bing || false;
-          }
-        } else {
-          const userDocRef = doc(db, "users", user.uid);
-          const userDoc = await getDoc(userDocRef);
-
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            sessionDetails.toggleStatuses.amazon = userData.amazon || false;
-            sessionDetails.toggleStatuses.walmart = userData.walmart || false;
-            sessionDetails.toggleStatuses.takealot = userData.takealot || false;
-            sessionDetails.toggleStatuses.bol = userData.bol || false;
-            sessionDetails.toggleStatuses.temu = userData.temu || false;
-            sessionDetails.toggleStatuses.aliexpress =
-              userData.aliexpress || false;
-            sessionDetails.toggleStatuses.google = userData.google || false;
-            sessionDetails.toggleStatuses.bing = userData.bing || false;
-          }
-        }
-      } else {
-      }
-    } catch (error) {
-      console.error("Error handling session details:", error);
-    }
-
-    return sessionDetails;
-  }
-
-  const getSessionDetails = async () => {
-    console.log("Getting session details");
-    const sessionDetails = await getSessionFromDatabase();
-    sendResponse(sessionDetails);
-    return sessionDetails;
-  };
-
-  const handleSignIn = async () => {
-    console.log("Signing in to Zifty with Google OAuth...");
-    const user = await authenticateWithPopup();
-    try {
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
-          uid: user.uid,
-          paidAt: null,
-          customerId: null,
-          amazon: true,
-          walmart: true,
-          takealot: true,
-          bol: true,
-          temu: true,
-          aliexpress: true,
-          google: false,
-          bing: false,
-        });
-      }
-
-      sendResponse({ success: true });
-    } catch (error) {
-      console.error("Firebase Google Sign-In failed:", error);
-      sendResponse({ success: false, error: error.message || error });
-    }
-  };
-
-  const handleSignOut = async () => {
-    signOut(auth)
-      .then(() => {
-        sendResponse({ success: true });
-      })
-      .catch((error) => {
-        console.error("Sign out failed:", error.message || error);
-        sendResponse({ success: false, error: error.message || error });
-      });
-  };
-
-  const handleCreateSubscription = async () => {
-    if (!auth.currentUser) {
-      sendResponse({ success: false, error: "User is not signed in." });
-    } else {
-      sendResponse({ success: true, currentUser: auth.currentUser });
-    }
-  };
-
+  // TODO: If the user toggles an online store on/off, then the toggle state needs to be updated in local storage
   const handleToggleChange = async (toggleId, isChecked) => {
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error("User is not authenticated.");
-      }
-      const userDocRef = doc(db, "users", user.uid);
-      const updateData = {};
-      updateData[toggleId] = isChecked;
-      await setDoc(userDocRef, updateData, { merge: true });
-      return { success: true };
-    } catch (error) {
-      console.error(
-        `Failed to store toggle status for ${toggleId}:`,
-        error.message || error
-      );
-      return { success: false, error: error.message || error };
-    }
+    return { success: true };
+    // try {
+    //   const storageKey = "toggleStates";
+    //   let toggleStates = JSON.parse(localStorage.getItem(storageKey)) || {};
+    //   toggleStates[toggleId] = isChecked;
+    //   return { success: true };
+    // } catch (error) {
+    //   console.error(
+    //     `Failed to store toggle status for ${toggleId}:`,
+    //     error.message || error
+    //   );
+    //   return { success: false, error: error.message || error };
+    // }
   };
 
+  // Call the appropriate handler based on the message type
   if (request.type === "searchDetails") {
     handleSearchDetails();
-  } else if (request.message === "isUserSubscribed") {
-    handleIsUserSubscribed();
-  } else if (request.message === "getSessionDetails") {
-    getSessionDetails();
-  } else if (request.message === "signIn") {
-    handleSignIn();
-  } else if (request.message === "signOut") {
-    handleSignOut();
-  } else if (request.message === "createSubscription") {
-    handleCreateSubscription();
   } else if (request.message === "toggleChange") {
     const { toggleId, isChecked } = request;
     handleToggleChange(toggleId, isChecked);
@@ -262,19 +88,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Keep the message channel open for asynchronous response
 });
 
-async function authenticateWithPopup() {
-  try {
-    const authResponse = await firebaseAuth();
-    const accessToken = authResponse._tokenResponse.oauthAccessToken;
-    const credential = GoogleAuthProvider.credential(null, accessToken);
-    const result = await signInWithCredential(auth, credential);
-    const user = result.user;
-    return user;
-  } catch (error) {
-    console.error("Popup authentication failed:", error);
-  }
-}
-
+// Send search query to Facebook Marketplace API
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   let listings = [];
   try {
@@ -371,29 +185,6 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   }
 }
 
-async function isUserSubscribed(uid) {
-  try {
-    const userDocRef = doc(db, "users", uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      const expiresAt = userData.expiresAt;
-      if (expiresAt && new Date(expiresAt).getTime() > Date.now()) {
-        return true;
-      }
-      return false;
-    }
-    return false;
-  } catch (error) {
-    console.error(
-      "Failed to check subscription status:",
-      error.message || error
-    );
-    return false;
-  }
-}
-
 function convertCurrencyCode(price) {
   let formattedPrice = price;
   if (price.includes("ZAR")) {
@@ -401,5 +192,3 @@ function convertCurrencyCode(price) {
   }
   return formattedPrice;
 }
-
-export { fetchFromFacebookMarketplace, isUserSubscribed }; // Export this for testing

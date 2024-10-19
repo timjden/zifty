@@ -38,7 +38,6 @@
         "browser-extension/popup/popup_styles.css",
         "browser-extension/offscreen/offscreen.html",
         "browser-extension/offscreen/offscreen.js",
-        "browser-extension/assets/google.svg",
         "browser-extension/assets/Roboto-Bold.ttf",
         "browser-extension/assets/Roboto-Regular.ttf",
         "browser-extension/assets/NotoColorEmoji-Regular.ttf"
@@ -47,6 +46,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://us-central1-zifty-4e74a.cloudfunctions.net/completion https://www.facebook.com/api/graphql/"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://us-central1-zifty-4e74a.cloudfunctions.net/completion https://www.facebook.com/api/graphql/"
   }
 }
