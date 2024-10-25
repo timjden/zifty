@@ -4,48 +4,45 @@
   "description": "Discover secondhand treasures while you shop!",
   "author": "Zifty",
   "manifest_version": 3,
-  "permissions": ["offscreen", "geolocation", "identity"],
+  "permissions": ["offscreen", "geolocation", "storage"],
   "action": {
-    "default_popup": "./browser-extension/popup/popup.html",
+    "default_popup": "popup/popup.html",
     "default_icon": {
-      "16": "browser-extension/assets/icon16.png",
-      "48": "browser-extension/assets/icon48.png",
-      "128": "browser-extension/assets/icon128.png"
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
     }
   },
   "background": {
-    "service_worker": "./browser-extension/background/background.js",
+    "service_worker": "background/background.js",
     "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["./browser-extension/content/content.js"]
+      "js": ["content/overlay.js", "content/content.js"]
     }
   ],
   "host_permissions": ["<all_urls>"],
   "icons": {
-    "16": "browser-extension/assets/icon16.png",
-    "32": "browser-extension/assets/icon32.png",
-    "48": "browser-extension/assets/icon48.png",
-    "64": "browser-extension/assets/icon64.png",
-    "128": "browser-extension/assets/icon128.png"
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "64": "assets/icon64.png",
+    "128": "assets/icon128.png"
   },
   "web_accessible_resources": [
     {
       "resources": [
-        "browser-extension/content/styles.css",
-        "browser-extension/popup/popup_styles.css",
-        "browser-extension/offscreen/offscreen.html",
-        "browser-extension/offscreen/offscreen.js",
-        "browser-extension/assets/Roboto-Bold.ttf",
-        "browser-extension/assets/Roboto-Regular.ttf",
-        "browser-extension/assets/NotoColorEmoji-Regular.ttf"
+        "content/styles.css",
+        "popup/popup_styles.css",
+        "offscreen/offscreen.html",
+        "offscreen/offscreen.js",
+        "assets/Roboto-Bold.ttf",
+        "assets/Roboto-Regular.ttf",
+        "assets/NotoColorEmoji-Regular.ttf"
       ],
       "matches": ["<all_urls>"]
     }
-  ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://us-central1-zifty-4e74a.cloudfunctions.net/completion https://www.facebook.com/api/graphql/"
-  }
+  ]
 }
