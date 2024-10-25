@@ -1,4 +1,4 @@
-const OFFSCREEN_DOCUMENT_PATH = "browser-extension/offscreen/offscreen.html";
+const OFFSCREEN_DOCUMENT_PATH = "offscreen/offscreen.html";
 let creating = null; // A global promise to avoid concurrency issues
 
 export async function getGeolocation() {
@@ -45,6 +45,8 @@ async function closeOffscreenDocument() {
 }
 
 export async function logLocation() {
+  console.log("Getting geolocation...");
   const location = await getGeolocation();
+  console.log("Geolocation:", location);
   return location;
 }
