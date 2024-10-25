@@ -1,5 +1,48 @@
 import { logLocation } from "./geolocation.js";
 
+// Supported sites with default toggle states
+const defaultToggles = {
+  amazon: true,
+  walmart: true,
+  takealot: true,
+  bol: true,
+  temu: true,
+  aliexpress: true,
+  google: true,
+  bing: true,
+};
+
+// Function to set default toggle states
+function setDefaultToggleStates() {
+  chrome.storage.sync.set(defaultToggles, function () {
+    if (chrome.runtime.lastError) {
+      console.error(
+        "Error setting default toggle states:",
+        chrome.runtime.lastError
+      );
+    } else {
+      console.log("Default toggle states set to true for all supported sites.");
+    }
+  });
+}
+
+// Initialize toggles to true upon installation or update
+chrome.runtime.onInstalled.addListener(function (details) {
+  if (details.reason === "install" || details.reason === "update") {
+    setDefaultToggleStates();
+  }
+});
+
+// For development: set default toggles if not already set
+chrome.runtime.onStartup.addListener(() => {
+  chrome.storage.sync.get(null, (items) => {
+    // If no toggles are found in storage (for fresh development load), set defaults
+    if (Object.keys(items).length === 0) {
+      setDefaultToggleStates();
+    }
+  });
+});
+
 // Send a message to content script if the URL changes
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
   if (tab.url && tab.status === "complete" && tab.active) {
@@ -14,6 +57,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle the search query from the content script, sends it to Facebook Marketplace, and return the results
   const handleSearchDetails = async () => {
+    console.log("Hello World");
     try {
       const location = await logLocation(); // Get user location before sending request to Facebook Marketplace
 
@@ -62,27 +106,85 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // TODO: If the user toggles an online store on/off, then the toggle state needs to be updated in local storage
   const handleToggleChange = async (toggleId, isChecked) => {
-    return { success: true };
-    // try {
-    //   const storageKey = "toggleStates";
-    //   let toggleStates = JSON.parse(localStorage.getItem(storageKey)) || {};
-    //   toggleStates[toggleId] = isChecked;
-    //   return { success: true };
-    // } catch (error) {
-    //   console.error(
-    //     `Failed to store toggle status for ${toggleId}:`,
-    //     error.message || error
-    //   );
-    //   return { success: false, error: error.message || error };
-    // }
+    // Create an object to store the toggle state
+    const toggleState = {};
+    toggleState[toggleId] = isChecked;
+
+    // Use Chrome's local storage with sync option
+    chrome.storage.sync.set(toggleState, function () {
+      if (chrome.runtime.lastError) {
+        console.error("Error saving toggle state:", chrome.runtime.lastError);
+
+        // Fetch and print everything in Chrome local storage for debugging
+        chrome.storage.sync.get(null, function (items) {
+          if (chrome.runtime.lastError) {
+            console.error(
+              "Error fetching storage data:",
+              chrome.runtime.lastError
+            );
+          } else {
+            console.log("Current storage data:", items);
+          }
+        });
+        sendResponse({ success: false, error: chrome.runtime.lastError });
+        return { success: false, error: chrome.runtime.lastError };
+      } else {
+        console.log(`Toggle state for ${toggleId} saved:`, isChecked);
+
+        // Fetch and print everything in Chrome local storage for debugging
+        chrome.storage.sync.get(null, function (items) {
+          if (chrome.runtime.lastError) {
+            console.error(
+              "Error fetching storage data:",
+              chrome.runtime.lastError
+            );
+          } else {
+            console.log("Current storage data:", items);
+          }
+        });
+        sendResponse({ success: true });
+        return { success: true };
+      }
+    });
+  };
+
+  // TODO: Handle the request to get the toggle states from local storage
+  const handleGetToggleStates = async () => {
+    console.log("Fetching toggle states...");
+    try {
+      // Use a promise to fetch all the toggle states from chrome.storage.sync
+      const toggleStates = await new Promise((resolve, reject) => {
+        chrome.storage.sync.get(null, function (items) {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(items);
+          }
+        });
+      });
+
+      // Return the fetched toggle states
+      console.log("Toggle states fetched:", toggleStates);
+      sendResponse({ success: true, data: toggleStates });
+      return { success: true, data: toggleStates };
+    } catch (error) {
+      console.error("Error fetching toggle states:", error);
+      sendResponse({ success: false, error: error.message });
+      return { success: false, error: error.message };
+    }
   };
 
   // Call the appropriate handler based on the message type
   if (request.type === "searchDetails") {
+    console.log("Received search details:", request.data);
     handleSearchDetails();
   } else if (request.message === "toggleChange") {
+    console.log("handle toggleChange");
     const { toggleId, isChecked } = request;
     handleToggleChange(toggleId, isChecked);
+  } else if (request.message === "getToggleStates") {
+    console.log("handle getToggleStates");
+    handleGetToggleStates();
   }
 
   return true; // Keep the message channel open for asynchronous response
