@@ -1,3 +1,5 @@
+// Mostly lifted from https://developer.chrome.com/docs/extensions/how-to/web-platform/geolocation
+
 chrome.runtime.onMessage.addListener(handleMessages);
 
 // Main message handler
