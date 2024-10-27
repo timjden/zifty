@@ -7,7 +7,6 @@ document.querySelectorAll(".toggle").forEach((element) => {
 document.addEventListener("DOMContentLoaded", () => {
   // ... get user settings i.e. the sites the user has toggled on/off
   chrome.runtime.sendMessage({ message: "getToggleStates" }, (response) => {
-    console.log("Got toggle states:", response.data);
     const toggleStates = response.data;
     const toggles = document.querySelectorAll(".toggle");
 

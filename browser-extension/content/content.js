@@ -17,9 +17,6 @@ isSupportedSite().then((supported) => {
 window.addEventListener("load", () => {
   isSupportedSite().then((supported) => {
     if (!supported) {
-      console.log(
-        "This page is not supported by Zifty, or has been disabled by the user"
-      );
       return;
     }
 

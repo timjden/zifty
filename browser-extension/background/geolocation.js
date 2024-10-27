@@ -47,8 +47,6 @@ async function closeOffscreenDocument() {
 }
 
 export async function logLocation() {
-  console.log("Getting geolocation...");
   const location = await getGeolocation();
-  console.log("Geolocation:", location);
   return location;
 }

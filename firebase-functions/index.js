@@ -6,7 +6,6 @@ require("dotenv").config(); // Load environment variables from .env file
 admin.initializeApp();
 
 exports.completion = functions.https.onRequest(async (req, res) => {
-  console.log("Received completion request");
   const payload = req.body;
   const query = payload.query || "tongue scraper near me";
   const apiKey = process.env.OPENAI_SECRET;
@@ -44,7 +43,6 @@ exports.completion = functions.https.onRequest(async (req, res) => {
   try {
     const response = await axios.post(url, data, { headers: requestHeaders });
     const completion = response.data;
-    console.log("Completion:", completion.choices[0].message.content);
 
     return res.status(200).json({
       completion: completion.choices[0].message.content,
