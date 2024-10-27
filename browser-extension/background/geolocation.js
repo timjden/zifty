@@ -1,3 +1,5 @@
+// Mostly lifted from https://developer.chrome.com/docs/extensions/how-to/web-platform/geolocation
+
 const OFFSCREEN_DOCUMENT_PATH = "offscreen/offscreen.html";
 let creating = null; // A global promise to avoid concurrency issues
 
