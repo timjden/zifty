@@ -4,6 +4,8 @@ const ITEMS_PER_OVERLAY_PAGE = 6; // The number of listings to show per page in 
 let currentIndex = 0; // Used to track pagination in the Zifty overlay
 
 function createOverlay() {
+  currentIndex = 0; // Clear the index used to track pagination
+
   const overlay = document.createElement("div");
   overlay.id = "zifty-overlay";
 
