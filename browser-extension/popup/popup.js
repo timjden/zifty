@@ -3,8 +3,9 @@ document.querySelectorAll(".toggle").forEach((element) => {
   element.addEventListener("change", handleToggleChange);
 });
 
+// When the popup loads...
 document.addEventListener("DOMContentLoaded", () => {
-  // Get user settings i.e. the sites the user has toggled on/off
+  // ... get user settings i.e. the sites the user has toggled on/off
   chrome.runtime.sendMessage({ message: "getToggleStates" }, (response) => {
     console.log("Got toggle states:", response.data);
     const toggleStates = response.data;
@@ -22,8 +23,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
-// });
 
+// Send a message to background to update toggle states in chrome storage when a toggle switch is changed
 function handleToggleChange(event) {
   const isChecked = event.target.checked;
   const toggleId = event.target.id;
@@ -31,17 +32,5 @@ function handleToggleChange(event) {
     message: "toggleChange",
     toggleId,
     isChecked,
-  });
-}
-
-function formatDate(isoString) {
-  const date = new Date(isoString);
-  return date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "short", // Full month name
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true, // Display in 12-hour format
   });
 }
