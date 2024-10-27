@@ -223,7 +223,8 @@ async function isSupportedSite() {
   const isGoogleSearchBuyPage =
     /^www\.google\./.test(url.hostname) &&
     url.pathname === "/search" &&
-    googleBuyPanelExists;
+    googleBuyPanelExists &&
+    (await isToggledOn("google"));
 
   // Check if this is a Bing search page with product listings
   const bingBuyPanelXpath = "//*[@class='pa_mlo pa_carousel_mlo']";
@@ -239,7 +240,8 @@ async function isSupportedSite() {
   const isBingSearchBuyPage =
     /^www\.bing\./.test(url.hostname) &&
     url.pathname === "/search" &&
-    bingBuyPanelExists;
+    bingBuyPanelExists &&
+    (await isToggledOn("bing"));
 
   // Check if this is a supported store (e.g., Amazon, Walmart, Takealot, Bol, Temu, AliExpress)
   const isSupportedStore =
