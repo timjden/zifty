@@ -1,6 +1,6 @@
 import { logLocation } from "./geolocation.js";
 
-// Supported sites with default toggle states
+// Supported site id's with default toggle states
 const defaultToggles = {
   amazon: true,
   walmart: true,
@@ -20,27 +20,15 @@ function setDefaultToggleStates() {
         "Error setting default toggle states:",
         chrome.runtime.lastError
       );
-    } else {
-      console.log("Default toggle states set to true for all supported sites.");
     }
   });
 }
 
-// Initialize toggles to true upon installation or update
+// Initialize toggles to default toggle state (e.g. 'true') upon installation
 chrome.runtime.onInstalled.addListener(function (details) {
-  if (details.reason === "install" || details.reason === "update") {
+  if (details.reason === "install") {
     setDefaultToggleStates();
   }
-});
-
-// For development: set default toggles if not already set
-chrome.runtime.onStartup.addListener(() => {
-  chrome.storage.sync.get(null, (items) => {
-    // If no toggles are found in storage (for fresh development load), set defaults
-    if (Object.keys(items).length === 0) {
-      setDefaultToggleStates();
-    }
-  });
 });
 
 // Send a message to content script if the URL changes
@@ -55,19 +43,20 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
 // Handle messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // Handle the search query from the content script, sends it to Facebook Marketplace, and return the results
+  // Handle the search query from the content script, send it to Facebook Marketplace, and return the results
   const handleSearchDetails = async () => {
-    console.log("Hello World");
     try {
       const location = await logLocation(); // Get user location before sending request to Facebook Marketplace
 
-      // If the search query comes from a search engine, it typically will be something like "buy [item] near me".
-      // This query is too verbose for Facebook Marketplace, so we need to simplify it.
+      // If the search query comes from a search engine, it typically will be something like "buy [item] near me"
+      // This query is too verbose for Facebook Marketplace, so we need to simplify it
       if (request.data.page === "google" || request.data.page === "bing") {
         const headers = {
           "Content-Type": "application/json",
         };
         const body = JSON.stringify({ query: request.data.query });
+        // The query is simplified by sending it to a Firebase Function that uses OpenAI's API to generate a completion
+        // It will simplify the query from "buy [item] near me" to "[item]", for example
         const response = await fetch(
           "https://us-central1-zifty-4e74a.cloudfunctions.net/completion",
           {
@@ -81,6 +70,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         request.data.query = completion.toLowerCase().trim();
       }
 
+      // Fetch Facebook Marketplace listings
       const fbListings = await fetchFromFacebookMarketplace(
         request.data.query,
         {
@@ -99,12 +89,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true });
     } catch (error) {
       // Or if an error occurs, send the error message to the content script
-      console.error("Error during searchDetails processing:", error);
+      console.error("Error fetching listings:", error);
       sendResponse({ success: false, error: error.message });
     }
   };
 
-  // TODO: If the user toggles an online store on/off, then the toggle state needs to be updated in local storage
+  // If the user toggles an online store on/off, then the toggle state needs to be updated in local storage
   const handleToggleChange = async (toggleId, isChecked) => {
     // Create an object to store the toggle state
     const toggleState = {};
@@ -114,45 +104,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.sync.set(toggleState, function () {
       if (chrome.runtime.lastError) {
         console.error("Error saving toggle state:", chrome.runtime.lastError);
-
-        // Fetch and print everything in Chrome local storage for debugging
-        chrome.storage.sync.get(null, function (items) {
-          if (chrome.runtime.lastError) {
-            console.error(
-              "Error fetching storage data:",
-              chrome.runtime.lastError
-            );
-          } else {
-            console.log("Current storage data:", items);
-          }
-        });
         sendResponse({ success: false, error: chrome.runtime.lastError });
         return { success: false, error: chrome.runtime.lastError };
       } else {
-        console.log(`Toggle state for ${toggleId} saved:`, isChecked);
-
-        // Fetch and print everything in Chrome local storage for debugging
-        chrome.storage.sync.get(null, function (items) {
-          if (chrome.runtime.lastError) {
-            console.error(
-              "Error fetching storage data:",
-              chrome.runtime.lastError
-            );
-          } else {
-            console.log("Current storage data:", items);
-          }
-        });
         sendResponse({ success: true });
         return { success: true };
       }
     });
   };
 
-  // TODO: Handle the request to get the toggle states from local storage
+  // Handle the request to get the toggle states from local storage
   const handleGetToggleStates = async () => {
-    console.log("Fetching toggle states...");
     try {
-      // Use a promise to fetch all the toggle states from chrome.storage.sync
+      // Use a promise to fetch all the toggle states from chrome.storage.sync to ensure the data is fetched before returning
       const toggleStates = await new Promise((resolve, reject) => {
         chrome.storage.sync.get(null, function (items) {
           if (chrome.runtime.lastError) {
@@ -164,7 +128,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
 
       // Return the fetched toggle states
-      console.log("Toggle states fetched:", toggleStates);
       sendResponse({ success: true, data: toggleStates });
       return { success: true, data: toggleStates };
     } catch (error) {
@@ -176,21 +139,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Call the appropriate handler based on the message type
   if (request.type === "searchDetails") {
-    console.log("Received search details:", request.data);
     handleSearchDetails();
   } else if (request.message === "toggleChange") {
-    console.log("handle toggleChange");
     const { toggleId, isChecked } = request;
     handleToggleChange(toggleId, isChecked);
   } else if (request.message === "getToggleStates") {
-    console.log("handle getToggleStates");
     handleGetToggleStates();
   }
 
   return true; // Keep the message channel open for asynchronous response
 });
 
-// Send search query to Facebook Marketplace API
+// Function to send search query to Facebook Marketplace API
 async function fetchFromFacebookMarketplace(query, coordinates, radius) {
   let listings = [];
   try {
@@ -268,7 +228,7 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
           id: edge.node.listing.id,
           imageSrc:
             edge.node.listing.primary_listing_photo?.image?.uri ||
-            "https://i.imgur.com/buvAnZH.png",
+            "https://i.imgur.com/buvAnZH.png", // publicly available image to use as a placeholder if no image is available
           link: `https://www.facebook.com/marketplace/item/${edge.node.listing.id}`,
           title: edge.node.listing.marketplace_listing_title,
           price: convertCurrencyCode(
@@ -281,12 +241,13 @@ async function fetchFromFacebookMarketplace(query, coordinates, radius) {
 
     return listings;
   } catch (error) {
-    console.error("Error fetching from Marketplace:", error);
+    console.error("Error fetching listings from Facebook Marketplace:", error);
     listings = [];
     return listings;
   }
 }
 
+// Function to convert ZAR currency code to R
 function convertCurrencyCode(price) {
   let formattedPrice = price;
   if (price.includes("ZAR")) {
