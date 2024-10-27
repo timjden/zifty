@@ -71,17 +71,11 @@
   transition: transform 0.5s ease;
 }
 
-.close-button,
 .arrow {
   position: absolute;
   color: white;
   cursor: pointer;
   height: 25%;
-}
-
-.close-button {
-  top: 0;
-  right: 0.2%;
 }
 
 .close-button-container {
@@ -107,7 +101,7 @@
 
 .listing {
   height: 95%;
-  width: 15.666666666666666666666666%; /* 100 / 6 minus 1 for the margin */
+  width: 15.666666666666666666666666%; /* 100 / ITEMS_PER_OVERLAY_PAGE (overlay.js) minus 1 for the margin */
   border: 1px solid white;
   margin-left: 0.5%;
   margin-right: 0.5%;
