@@ -1,13 +1,10 @@
-console.log("Zifty has injected a content script into this page.");
-
 let listingsData; // Place to store the listings received from background (e.g. Facebook Marketplace API)
 let currentSearchDetails = { page: null, query: null }; // Place to store the user's search query and the page they are on
-let sendingSearchDetailsToBackground = false; // Flag to prevent multiple, concurrent requests for listings
+let sendingSearchDetailsToBackground = false; // Flag to prevent multiple, concurrent requests for listings (due to simultaneous URL change and page load)
 let ziftyOverlay; // Holds the Zifty overlay element
 
 // Delete the overlay if the user navigates away from a supported site
 isSupportedSite().then((supported) => {
-  // Delete the overlay if the user navigates away from a supported site
   if (!supported) {
     const overlay = document.getElementById("zifty-overlay");
     if (overlay) {
@@ -29,7 +26,7 @@ window.addEventListener("load", () => {
     if (!sendingSearchDetailsToBackground) {
       const searchDetails = getSearchDetails();
 
-      // If the search query is the same as the previous search query (e.g., URL changes due to pagination), return
+      // If the search query is the same as the previous search query (e.g., URL changes due to pagination), return instead of re-fetching listings and re-creating the overlay
       if (searchDetails.query === currentSearchDetails.query) {
         if (!document.getElementById("zifty-overlay")) {
           ziftyOverlay = createZiftyOverlay();
@@ -45,7 +42,6 @@ window.addEventListener("load", () => {
       return;
     }
 
-    currentIndex = 0; // Clear the index used to track pagination
     ziftyOverlay = createZiftyOverlay();
   });
 });
@@ -53,8 +49,6 @@ window.addEventListener("load", () => {
 // When the URL changes, send a message to the background script asking for relevant listings
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
-    console.log("URL changed");
-
     isSupportedSite().then((supported) => {
       if (!supported) {
         try {
@@ -88,7 +82,6 @@ chrome.runtime.onMessage.addListener((request) => {
         return;
       }
 
-      currentIndex = 0; // Clear the index used to track pagination
       ziftyOverlay = createZiftyOverlay();
     });
   }
@@ -109,10 +102,6 @@ chrome.runtime.onMessage.addListener(async (request) => {
     populateOverlay(request, ziftyOverlay);
   }
 });
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function createZiftyOverlay() {
   if (document.getElementById("zifty-overlay")) {
@@ -176,13 +165,14 @@ function extractQueryParamValue(url, queryParamName) {
   const queryParams = new URLSearchParams(urlObj.search);
   let query = queryParams.get(queryParamName);
   if (query === null) {
-    console.log(`Could not find query ${queryParamName} in URL`);
+    console.error(`Could not find query ${queryParamName} in URL`);
   } else {
     query = query.toLowerCase().trim();
   }
   return query;
 }
 
+// AliExpress has a different URL structure for search queries
 function extractAliExpressSearchQuery(url) {
   const urlObj = new URL(url);
   const pathname = urlObj.pathname;
@@ -194,6 +184,7 @@ function extractAliExpressSearchQuery(url) {
   }
 }
 
+// Check if the user has toggled on the specific site
 async function isToggledOn(id) {
   return new Promise((resolve, reject) => {
     // Send a message to retrieve toggle states
@@ -206,14 +197,10 @@ async function isToggledOn(id) {
         reject(false); // Reject with false if there's an error or no response
       } else {
         const toggleStates = response.data;
-        console.log(toggleStates);
-
         // Check if the specific toggle is on or off
         if (toggleStates && toggleStates[id]) {
-          console.log("Toggle is active");
           resolve(true);
         } else {
-          console.log("Toggle is inactive");
           resolve(false);
         }
       }
@@ -223,6 +210,7 @@ async function isToggledOn(id) {
 
 // Check if we want to show the Zifty overlay on this page
 async function isSupportedSite() {
+  // Zifty should only pop up on search engines when the results contain product listings
   // Check if this is a Google search page with product listings
   const googleBuyPanelXpath =
     "//div[contains(concat(' ', normalize-space(@class), ' '), ' cu-container ')]";
