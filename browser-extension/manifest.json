@@ -40,7 +40,15 @@
         "offscreen/offscreen.js",
         "assets/Roboto-Bold.ttf",
         "assets/Roboto-Regular.ttf",
-        "assets/NotoColorEmoji-Regular.ttf"
+        "assets/NotoColorEmoji-Regular.ttf",
+        "assets/amazon.png",
+        "assets/walmart.png",
+        "assets/takealot.png",
+        "assets/bol.png",
+        "assets/temu.png",
+        "assets/aliexpress.png",
+        "assets/google.png",
+        "assets/bing.png"
       ],
       "matches": ["<all_urls>"]
     }
