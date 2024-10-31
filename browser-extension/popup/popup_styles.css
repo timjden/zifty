@@ -39,7 +39,7 @@ body {
 }
 
 #indent {
-  font-size: large;
+  font-size: 20px;
   padding-left: 20px;
 }
 
@@ -111,4 +111,37 @@ input:checked + .slider:before {
 
 .emoji {
   font-family: "NotoColorEmoji";
+}
+
+#support-container {
+  border: 2px solid black;
+  border-radius: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding-left: 10px;
+  padding-right: 5px;
+  box-shadow: gray 1px 1px 1px;
+  height: 20px;
+  padding: 20px;
+}
+
+#support-text #contact-text {
+  font-size: 20px;
+}
+
+.needs-radius {
+  border-radius: 3px;
+}
+
+a {
+  color: black;
+}
+
+/* a:hover,
+a:visited:hover {
+  color: lightgray;
+} */
+
+a:visited {
+  color: black;
 }
