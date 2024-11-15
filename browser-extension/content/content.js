@@ -283,7 +283,6 @@ async function isSupportedSite() {
       url.pathname === "/search" &&
       (await isToggledOn("walmart"))) ||
     (/^www\.takealot\./.test(url.hostname) &&
-      url.pathname === "/all" &&
       (await isToggledOn("takealot"))) ||
     (/^www\.bol\./.test(url.hostname) &&
       url.pathname === "/nl/nl/s/" &&
