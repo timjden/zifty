@@ -8,13 +8,18 @@ isSupportedSite().then((supported) => {
   if (!supported) {
     const overlay = document.getElementById("zifty-overlay");
     if (overlay) {
-      document.body.removeChild(overlay);
+      overlay.style.animation = "hide 0.5s forwards"; // Hides the overlay
     }
   }
 });
 
 // When a page loads, send a message to the background script asking for the relevant listings
 window.addEventListener("load", () => {
+  // Always remove the overlay when the page loads
+  const overlay = document.getElementById("zifty-overlay");
+    if (overlay) {
+      document.body.removeChild(overlay);
+    }
   isSupportedSite().then((supported) => {
     if (!supported) {
       return;
@@ -22,6 +27,15 @@ window.addEventListener("load", () => {
 
     if (!sendingSearchDetailsToBackground) {
       const searchDetails = getSearchDetails();
+
+      // If the search query is null, hide the overlay if it exists and return
+      if (searchDetails.query == null) {
+        const overlay = document.getElementById("zifty-overlay");
+        if (overlay) {
+          overlay.style.animation = "hide 0.5s forwards"; // Hides the overlay
+        }
+        return
+      }
 
       // If the search query is the same as the previous search query (e.g., URL changes due to pagination), return instead of re-fetching listings and re-creating the overlay
       if (searchDetails.query === currentSearchDetails.query) {
@@ -46,12 +60,13 @@ window.addEventListener("load", () => {
 // When the URL changes, send a message to the background script asking for relevant listings
 chrome.runtime.onMessage.addListener((request) => {
   if (request.message === "URL changed") {
+    // But if the site is not supported, hide the overlay
     isSupportedSite().then((supported) => {
       if (!supported) {
         try {
           const overlay = document.getElementById("zifty-overlay");
           if (overlay) {
-            document.body.removeChild(overlay);
+            overlay.style.animation = "hide 0.5s forwards"; // Hides the overlay
           }
         } catch (error) {
           console.error("Error removing overlay", error);
@@ -62,9 +77,20 @@ chrome.runtime.onMessage.addListener((request) => {
       if (!sendingSearchDetailsToBackground) {
         const searchDetails = getSearchDetails();
 
+        // If the search query is null, hide the overlay if it exists and return
+        if (searchDetails.query == null) {
+          const overlay = document.getElementById("zifty-overlay");
+          if (overlay) {
+            overlay.style.animation = "hide 0.5s forwards"; // Hides the overlay
+          }
+          return
+        }
+
         // If the search query is the same as the previous search query (e.g., URL changes due to pagination), return
         if (searchDetails.query === currentSearchDetails.query) {
-          if (!document.getElementById("zifty-overlay")) {
+          const overlay = document.getElementById("zifty-overlay")
+          // If search query is the same as the previous search query but the overlay does not exist, create the overlay
+          if (!overlay.style.animation.includes("popUp")) {
             ziftyOverlay = createZiftyOverlay();
             populateOverlay(
               { data: listingsData, query: searchDetails.query },
@@ -102,7 +128,8 @@ chrome.runtime.onMessage.addListener(async (request) => {
 
 function createZiftyOverlay() {
   if (document.getElementById("zifty-overlay")) {
-    document.body.removeChild(document.getElementById("zifty-overlay"));
+    const overlay = document.getElementById("zifty-overlay")
+    document.body.removeChild(overlay)
   }
   const overlay = createOverlay();
   overlay.style.animation = "popUp 0.5s forwards";
@@ -162,11 +189,12 @@ function extractQueryParamValue(url, queryParamName) {
   const queryParams = new URLSearchParams(urlObj.search);
   let query = queryParams.get(queryParamName);
   if (query === null) {
-    console.error(`Could not find query ${queryParamName} in URL`);
+    // console.error(`Could not find query ${queryParamName} in URL`);
+    return null
   } else {
     query = query.toLowerCase().trim();
+    return query;
   }
-  return query;
 }
 
 // AliExpress has a different URL structure for search queries
